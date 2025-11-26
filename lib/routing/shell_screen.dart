@@ -51,10 +51,7 @@ class _ShellScreenState extends State<ShellScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _screens,
-      ),
+      body: IndexedStack(index: _currentIndex, children: _screens),
       floatingActionButton: FloatingActionButton(
         onPressed: () => context.push('/log-catch'),
         backgroundColor: AppColors.accentOrange,
@@ -86,12 +83,19 @@ class _ShellScreenState extends State<ShellScreen> {
             children: [
               _buildNavItem(0, Icons.map_outlined, Icons.map, 'Map'),
               _buildNavItem(
-                  1, Icons.auto_graph_outlined, Icons.auto_graph, 'Forecast'),
+                1,
+                Icons.auto_graph_outlined,
+                Icons.auto_graph,
+                'Forecast',
+              ),
               const SizedBox(width: 56), // Space for FAB
               _buildNavItem(
-                  3, Icons.history_outlined, Icons.history, 'History'),
-              _buildNavItem(
-                  4, Icons.person_outline, Icons.person, 'Profile'),
+                3,
+                Icons.history_outlined,
+                Icons.history,
+                'History',
+              ),
+              _buildNavItem(4, Icons.person_outline, Icons.person, 'Profile'),
             ],
           ),
         ),
@@ -100,7 +104,11 @@ class _ShellScreenState extends State<ShellScreen> {
   }
 
   Widget _buildNavItem(
-      int index, IconData icon, IconData activeIcon, String label) {
+    int index,
+    IconData icon,
+    IconData activeIcon,
+    String label,
+  ) {
     // Convert nav index to screen index for comparison
     final screenIndex = _navToScreenIndex(index);
     final isSelected = _currentIndex == screenIndex;
@@ -130,7 +138,9 @@ class _ShellScreenState extends State<ShellScreen> {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                color: isSelected ? AppColors.accentOrange : AppColors.textMuted,
+                color: isSelected
+                    ? AppColors.accentOrange
+                    : AppColors.textMuted,
               ),
             ),
           ],

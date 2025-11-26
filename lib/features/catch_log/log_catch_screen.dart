@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
@@ -28,11 +29,136 @@ class _LogCatchScreenState extends State<LogCatchScreen> {
   double? _depth;
   DateTime _catchTime = DateTime.now();
   bool _isLoading = false;
+  bool _isProcessingPhoto = false;
+  String? _photoPath;
+  bool _catchSaved = false;
 
   @override
   void dispose() {
     _notesController.dispose();
+    // Clean up orphaned photo if user navigates away without saving
+    if (!_catchSaved && _photoPath != null) {
+      final appState = context.read<AppState>();
+      appState.photoService.deletePhoto(_photoPath);
+    }
     super.dispose();
+  }
+
+  Future<void> _takePhoto() async {
+    final photoService = context.read<AppState>().photoService;
+    setState(() => _isProcessingPhoto = true);
+
+    try {
+      final path = await photoService.takePhoto();
+      if (path != null) {
+        // Delete old photo if replacing
+        if (_photoPath != null) {
+          await photoService.deletePhoto(_photoPath);
+        }
+        setState(() => _photoPath = path);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to capture photo. Please try again.'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isProcessingPhoto = false);
+      }
+    }
+  }
+
+  Future<void> _pickFromGallery() async {
+    final photoService = context.read<AppState>().photoService;
+    setState(() => _isProcessingPhoto = true);
+
+    try {
+      final path = await photoService.pickFromGallery();
+      if (path != null) {
+        // Delete old photo if replacing
+        if (_photoPath != null) {
+          await photoService.deletePhoto(_photoPath);
+        }
+        setState(() => _photoPath = path);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to select photo. Please try again.'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isProcessingPhoto = false);
+      }
+    }
+  }
+
+  Future<void> _removePhoto() async {
+    if (_photoPath != null) {
+      final photoService = context.read<AppState>().photoService;
+      await photoService.deletePhoto(_photoPath);
+      setState(() => _photoPath = null);
+    }
+  }
+
+  void _showPhotoOptions() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surfaceCard,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(
+                  Icons.camera_alt,
+                  color: AppColors.accentOrange,
+                ),
+                title: const Text('Take Photo'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _takePhoto();
+                },
+              ),
+              ListTile(
+                leading: const Icon(
+                  Icons.photo_library,
+                  color: AppColors.accentGold,
+                ),
+                title: const Text('Choose from Gallery'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickFromGallery();
+                },
+              ),
+              if (_photoPath != null)
+                ListTile(
+                  leading: const Icon(Icons.delete, color: AppColors.error),
+                  title: const Text('Remove Photo'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _removePhoto();
+                  },
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _selectDateTime() async {
@@ -100,8 +226,12 @@ class _LogCatchScreenState extends State<LogCatchScreen> {
     setState(() => _isLoading = true);
 
     final appState = context.read<AppState>();
-    final location = appState.currentLocation ??
-        const LatLng(AppConstants.defaultLatitude, AppConstants.defaultLongitude);
+    final location =
+        appState.currentLocation ??
+        const LatLng(
+          AppConstants.defaultLatitude,
+          AppConstants.defaultLongitude,
+        );
 
     final catchRecord = CatchRecord(
       id: const Uuid().v4(),
@@ -116,9 +246,11 @@ class _LogCatchScreenState extends State<LogCatchScreen> {
           ? WaterConditions(clarity: _selectedClarity!)
           : null,
       notes: _notesController.text.isNotEmpty ? _notesController.text : null,
+      photoUrl: _photoPath,
     );
 
     await appState.addCatch(catchRecord);
+    _catchSaved = true;
 
     if (mounted) {
       setState(() => _isLoading = false);
@@ -210,6 +342,9 @@ class _LogCatchScreenState extends State<LogCatchScreen> {
             _buildDateTimeField(),
             const SizedBox(height: 16),
             _buildLocationDisplay(),
+            const SizedBox(height: 24),
+            _buildSectionTitle('Photo'),
+            _buildPhotoSection(),
             const SizedBox(height: 24),
             _buildSectionTitle('Notes'),
             _buildNotesField(),
@@ -308,10 +443,7 @@ class _LogCatchScreenState extends State<LogCatchScreen> {
                 children: [
                   const Text(
                     'Date & Time',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textMuted,
-                    ),
+                    style: TextStyle(fontSize: 12, color: AppColors.textMuted),
                   ),
                   Text(
                     DateFormat('MMM d, yyyy • h:mm a').format(_catchTime),
@@ -368,8 +500,11 @@ class _LogCatchScreenState extends State<LogCatchScreen> {
                 ),
               ),
               if (location != null)
-                const Icon(Icons.check_circle,
-                    color: AppColors.success, size: 20),
+                const Icon(
+                  Icons.check_circle,
+                  color: AppColors.success,
+                  size: 20,
+                ),
             ],
           ),
         );
@@ -387,6 +522,125 @@ class _LogCatchScreenState extends State<LogCatchScreen> {
         prefixIcon: Padding(
           padding: EdgeInsets.only(bottom: 48),
           child: Icon(Icons.notes, color: AppColors.textMuted),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPhotoSection() {
+    // Show loading indicator while processing photo
+    if (_isProcessingPhoto) {
+      return Container(
+        height: 120,
+        decoration: BoxDecoration(
+          color: AppColors.surfaceElevated,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(color: AppColors.accentOrange),
+              SizedBox(height: 12),
+              Text(
+                'Processing photo...',
+                style: TextStyle(color: AppColors.textMuted, fontSize: 14),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_photoPath != null) {
+      return GestureDetector(
+        onTap: _showPhotoOptions,
+        child: Container(
+          height: 200,
+          decoration: BoxDecoration(
+            color: AppColors.surfaceElevated,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Image.file(File(_photoPath!), fit: BoxFit.cover),
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black.withAlpha(150),
+                      shape: BoxShape.circle,
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white),
+                      onPressed: _removePhoto,
+                      iconSize: 20,
+                      constraints: const BoxConstraints(
+                        minWidth: 36,
+                        minHeight: 36,
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: 8,
+                  right: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withAlpha(150),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.edit, color: Colors.white, size: 16),
+                        SizedBox(width: 4),
+                        Text(
+                          'Tap to change',
+                          style: TextStyle(color: Colors.white, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return GestureDetector(
+      onTap: _showPhotoOptions,
+      child: Container(
+        height: 120,
+        decoration: BoxDecoration(
+          color: AppColors.surfaceElevated,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: AppColors.textMuted.withAlpha(100),
+            width: 1,
+            style: BorderStyle.solid,
+          ),
+        ),
+        child: const Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.add_a_photo, color: AppColors.textMuted, size: 40),
+            SizedBox(height: 8),
+            Text(
+              'Add a photo of your catch',
+              style: TextStyle(color: AppColors.textMuted, fontSize: 14),
+            ),
+          ],
         ),
       ),
     );

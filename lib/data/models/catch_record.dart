@@ -33,45 +33,43 @@ class CatchRecord {
   });
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'species': species,
-        'weight': weight,
-        'length': length,
-        'bait_used': baitUsed,
-        'depth': depth,
-        'timestamp': timestamp.toIso8601String(),
-        'latitude': location.latitude,
-        'longitude': location.longitude,
-        'location_name': locationName,
-        'weather': weather?.toJson(),
-        'water_conditions': waterConditions?.toJson(),
-        'notes': notes,
-        'photo_url': photoUrl,
-      };
+    'id': id,
+    'species': species,
+    'weight': weight,
+    'length': length,
+    'bait_used': baitUsed,
+    'depth': depth,
+    'timestamp': timestamp.toIso8601String(),
+    'latitude': location.latitude,
+    'longitude': location.longitude,
+    'location_name': locationName,
+    'weather': weather?.toJson(),
+    'water_conditions': waterConditions?.toJson(),
+    'notes': notes,
+    'photo_url': photoUrl,
+  };
 
   factory CatchRecord.fromJson(Map<String, dynamic> json) => CatchRecord(
-        id: json['id'] as String,
-        species: json['species'] as String,
-        weight: json['weight'] as double?,
-        length: json['length'] as double?,
-        baitUsed: json['bait_used'] as String,
-        depth: json['depth'] as double?,
-        timestamp: DateTime.parse(json['timestamp'] as String),
-        location: LatLng(
-          json['latitude'] as double,
-          json['longitude'] as double,
-        ),
-        locationName: json['location_name'] as String?,
-        weather: json['weather'] != null
-            ? WeatherSnapshot.fromJson(json['weather'] as Map<String, dynamic>)
-            : null,
-        waterConditions: json['water_conditions'] != null
-            ? WaterConditions.fromJson(
-                json['water_conditions'] as Map<String, dynamic>)
-            : null,
-        notes: json['notes'] as String?,
-        photoUrl: json['photo_url'] as String?,
-      );
+    id: json['id'] as String,
+    species: json['species'] as String,
+    weight: json['weight'] as double?,
+    length: json['length'] as double?,
+    baitUsed: json['bait_used'] as String,
+    depth: json['depth'] as double?,
+    timestamp: DateTime.parse(json['timestamp'] as String),
+    location: LatLng(json['latitude'] as double, json['longitude'] as double),
+    locationName: json['location_name'] as String?,
+    weather: json['weather'] != null
+        ? WeatherSnapshot.fromJson(json['weather'] as Map<String, dynamic>)
+        : null,
+    waterConditions: json['water_conditions'] != null
+        ? WaterConditions.fromJson(
+            json['water_conditions'] as Map<String, dynamic>,
+          )
+        : null,
+    notes: json['notes'] as String?,
+    photoUrl: json['photo_url'] as String?,
+  );
 
   CatchRecord copyWith({
     String? id,
@@ -87,22 +85,21 @@ class CatchRecord {
     WaterConditions? waterConditions,
     String? notes,
     String? photoUrl,
-  }) =>
-      CatchRecord(
-        id: id ?? this.id,
-        species: species ?? this.species,
-        weight: weight ?? this.weight,
-        length: length ?? this.length,
-        baitUsed: baitUsed ?? this.baitUsed,
-        depth: depth ?? this.depth,
-        timestamp: timestamp ?? this.timestamp,
-        location: location ?? this.location,
-        locationName: locationName ?? this.locationName,
-        weather: weather ?? this.weather,
-        waterConditions: waterConditions ?? this.waterConditions,
-        notes: notes ?? this.notes,
-        photoUrl: photoUrl ?? this.photoUrl,
-      );
+  }) => CatchRecord(
+    id: id ?? this.id,
+    species: species ?? this.species,
+    weight: weight ?? this.weight,
+    length: length ?? this.length,
+    baitUsed: baitUsed ?? this.baitUsed,
+    depth: depth ?? this.depth,
+    timestamp: timestamp ?? this.timestamp,
+    location: location ?? this.location,
+    locationName: locationName ?? this.locationName,
+    weather: weather ?? this.weather,
+    waterConditions: waterConditions ?? this.waterConditions,
+    notes: notes ?? this.notes,
+    photoUrl: photoUrl ?? this.photoUrl,
+  );
 }
 
 /// Weather conditions at time of catch.
@@ -126,14 +123,14 @@ class WeatherSnapshot {
   });
 
   Map<String, dynamic> toJson() => {
-        'temperature': temperature,
-        'humidity': humidity,
-        'wind_speed': windSpeed,
-        'wind_direction': windDirection,
-        'pressure': pressure,
-        'condition': condition,
-        'moon_phase': moonPhase,
-      };
+    'temperature': temperature,
+    'humidity': humidity,
+    'wind_speed': windSpeed,
+    'wind_direction': windDirection,
+    'pressure': pressure,
+    'condition': condition,
+    'moon_phase': moonPhase,
+  };
 
   factory WeatherSnapshot.fromJson(Map<String, dynamic> json) =>
       WeatherSnapshot(
@@ -153,17 +150,13 @@ class WaterConditions {
   final String clarity;
   final double? level; // relative level
 
-  const WaterConditions({
-    this.temperature,
-    required this.clarity,
-    this.level,
-  });
+  const WaterConditions({this.temperature, required this.clarity, this.level});
 
   Map<String, dynamic> toJson() => {
-        'temperature': temperature,
-        'clarity': clarity,
-        'level': level,
-      };
+    'temperature': temperature,
+    'clarity': clarity,
+    'level': level,
+  };
 
   factory WaterConditions.fromJson(Map<String, dynamic> json) =>
       WaterConditions(

@@ -25,9 +25,11 @@ class CatchRepository {
   /// Gets catches filtered by date range.
   List<CatchRecord> getCatchesByDateRange(DateTime start, DateTime end) {
     return getAllCatches()
-        .where((c) =>
-            c.timestamp.isAfter(start) &&
-            c.timestamp.isBefore(end.add(const Duration(days: 1))))
+        .where(
+          (c) =>
+              c.timestamp.isAfter(start) &&
+              c.timestamp.isBefore(end.add(const Duration(days: 1))),
+        )
         .toList();
   }
 

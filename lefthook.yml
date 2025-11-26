@@ -11,7 +11,7 @@ pre-commit:
 
     dart-fix:
       glob: "*.dart"
-      run: dart fix --apply {staged_files}
+      run: dart fix --apply lib/
       stage_fixed: true
 
     flutter-analyze:

@@ -7,6 +7,7 @@ import '../repositories/catch_repository.dart';
 import '../repositories/user_repository.dart';
 import '../services/forecast_service.dart';
 import '../services/location_service.dart';
+import '../services/photo_service.dart';
 import '../services/weather_service.dart';
 
 /// Main application state provider.
@@ -16,6 +17,7 @@ class AppState extends ChangeNotifier {
   final LocationService _locationService;
   final WeatherService _weatherService;
   final ForecastService _forecastService;
+  final PhotoService _photoService;
 
   AppState({
     required CatchRepository catchRepository,
@@ -23,11 +25,13 @@ class AppState extends ChangeNotifier {
     required LocationService locationService,
     required WeatherService weatherService,
     required ForecastService forecastService,
-  })  : _catchRepository = catchRepository,
-        _userRepository = userRepository,
-        _locationService = locationService,
-        _weatherService = weatherService,
-        _forecastService = forecastService;
+    PhotoService? photoService,
+  }) : _catchRepository = catchRepository,
+       _userRepository = userRepository,
+       _locationService = locationService,
+       _weatherService = weatherService,
+       _forecastService = forecastService,
+       _photoService = photoService ?? PhotoService();
 
   // State
   bool _isLoading = false;
@@ -48,6 +52,7 @@ class AppState extends ChangeNotifier {
   List<BiteForecast> get biteForecast => _biteForecast;
   List<Hotspot> get hotspots => _hotspots;
   UserProfile? get userProfile => _userProfile;
+  PhotoService get photoService => _photoService;
 
   bool get isOnboardingComplete => _userRepository.isOnboardingComplete();
 
@@ -108,13 +113,15 @@ class AppState extends ChangeNotifier {
 
     // Update stats
     final stats = _catchRepository.getStatistics();
-    await _userRepository.updateStats(UserStats(
-      totalCatches: stats['totalCatches'] as int,
-      biggestCatch: stats['biggestCatch'] as double?,
-      mostCaughtSpecies: stats['mostCaughtSpecies'] as String?,
-      mostUsedBait: stats['mostUsedBait'] as String?,
-      fishingDays: stats['fishingDays'] as int,
-    ));
+    await _userRepository.updateStats(
+      UserStats(
+        totalCatches: stats['totalCatches'] as int,
+        biggestCatch: stats['biggestCatch'] as double?,
+        mostCaughtSpecies: stats['mostCaughtSpecies'] as String?,
+        mostUsedBait: stats['mostUsedBait'] as String?,
+        fishingDays: stats['fishingDays'] as int,
+      ),
+    );
     _userProfile = _userRepository.getProfile();
 
     notifyListeners();
@@ -122,6 +129,17 @@ class AppState extends ChangeNotifier {
 
   /// Deletes a catch record.
   Future<void> deleteCatch(String id) async {
+    // Find the catch to get its photo path before deleting
+    final catchToDelete = _catches.firstWhere(
+      (c) => c.id == id,
+      orElse: () => throw StateError('Catch not found'),
+    );
+
+    // Delete associated photo if it exists
+    if (catchToDelete.photoUrl != null) {
+      await _photoService.deletePhoto(catchToDelete.photoUrl);
+    }
+
     await _catchRepository.deleteCatch(id);
     _catches = _catchRepository.getAllCatches();
     _hotspots = _forecastService.generateHotspots(_catches);

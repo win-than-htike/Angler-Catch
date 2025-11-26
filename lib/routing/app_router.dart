@@ -34,27 +34,23 @@ class AppRouter {
           routes: [
             GoRoute(
               path: '/',
-              pageBuilder: (context, state) => const NoTransitionPage(
-                child: _MapPlaceholder(),
-              ),
+              pageBuilder: (context, state) =>
+                  const NoTransitionPage(child: _MapPlaceholder()),
             ),
             GoRoute(
               path: '/forecast',
-              pageBuilder: (context, state) => const NoTransitionPage(
-                child: _ForecastPlaceholder(),
-              ),
+              pageBuilder: (context, state) =>
+                  const NoTransitionPage(child: _ForecastPlaceholder()),
             ),
             GoRoute(
               path: '/history',
-              pageBuilder: (context, state) => const NoTransitionPage(
-                child: _HistoryPlaceholder(),
-              ),
+              pageBuilder: (context, state) =>
+                  const NoTransitionPage(child: _HistoryPlaceholder()),
             ),
             GoRoute(
               path: '/profile',
-              pageBuilder: (context, state) => const NoTransitionPage(
-                child: _ProfilePlaceholder(),
-              ),
+              pageBuilder: (context, state) =>
+                  const NoTransitionPage(child: _ProfilePlaceholder()),
             ),
           ],
         ),

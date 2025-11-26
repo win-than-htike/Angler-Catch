@@ -75,8 +75,9 @@ class LocationService {
       distanceFilter: 50, // meters
     );
 
-    return Geolocator.getPositionStream(locationSettings: locationSettings)
-        .map((position) => LatLng(position.latitude, position.longitude));
+    return Geolocator.getPositionStream(
+      locationSettings: locationSettings,
+    ).map((position) => LatLng(position.latitude, position.longitude));
   }
 
   /// Calculates distance between two points in miles.

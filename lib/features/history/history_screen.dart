@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -24,9 +25,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
         // Apply filter
         if (_filterSpecies != null) {
-          catches = catches
-              .where((c) => c.species == _filterSpecies)
-              .toList();
+          catches = catches.where((c) => c.species == _filterSpecies).toList();
         }
 
         // Apply sort
@@ -38,8 +37,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
             catches.sort((a, b) => a.species.compareTo(b.species));
             break;
           case 'weight':
-            catches.sort((a, b) =>
-                (b.weight ?? 0).compareTo(a.weight ?? 0));
+            catches.sort((a, b) => (b.weight ?? 0).compareTo(a.weight ?? 0));
             break;
         }
 
@@ -51,9 +49,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               _buildStats(appState),
               _buildFilters(appState),
               if (catches.isEmpty)
-                SliverFillRemaining(
-                  child: _buildEmptyState(),
-                )
+                SliverFillRemaining(child: _buildEmptyState())
               else
                 _buildCatchList(catches),
             ],
@@ -143,20 +139,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
         ),
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 12,
-            color: AppColors.textMuted,
-          ),
+          style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
         ),
       ],
     );
   }
 
   Widget _buildFilters(AppState appState) {
-    final species = appState.catches
-        .map((c) => c.species)
-        .toSet()
-        .toList()
+    final species = appState.catches.map((c) => c.species).toSet().toList()
       ..sort();
 
     return SliverToBoxAdapter(
@@ -216,10 +206,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         value: null,
                         child: Text('All Species'),
                       ),
-                      ...species.map((s) => DropdownMenuItem(
-                            value: s,
-                            child: Text(s),
-                          )),
+                      ...species.map(
+                        (s) => DropdownMenuItem(value: s, child: Text(s)),
+                      ),
                     ],
                     onChanged: (value) {
                       setState(() => _filterSpecies = value);
@@ -256,10 +245,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           const SizedBox(height: 8),
           const Text(
             'Start logging your catches!',
-            style: TextStyle(
-              fontSize: 14,
-              color: AppColors.textMuted,
-            ),
+            style: TextStyle(fontSize: 14, color: AppColors.textMuted),
           ),
         ],
       ),
@@ -268,16 +254,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   SliverList _buildCatchList(List<CatchRecord> catches) {
     return SliverList(
-      delegate: SliverChildBuilderDelegate(
-        (context, index) {
-          final catchRecord = catches[index];
-          return _CatchCard(
-            catchRecord: catchRecord,
-            onDelete: () => _confirmDelete(catchRecord),
-          );
-        },
-        childCount: catches.length,
-      ),
+      delegate: SliverChildBuilderDelegate((context, index) {
+        final catchRecord = catches[index];
+        return _CatchCard(
+          catchRecord: catchRecord,
+          onDelete: () => _confirmDelete(catchRecord),
+        );
+      }, childCount: catches.length),
     );
   }
 
@@ -321,13 +304,118 @@ class _CatchCard extends StatelessWidget {
   final CatchRecord catchRecord;
   final VoidCallback onDelete;
 
-  const _CatchCard({
-    required this.catchRecord,
-    required this.onDelete,
-  });
+  const _CatchCard({required this.catchRecord, required this.onDelete});
+
+  void _showPhotoViewer(BuildContext context) {
+    if (catchRecord.photoUrl == null) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.7,
+              ),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                color: AppColors.surfaceCard,
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Image.file(
+                  File(catchRecord.photoUrl!),
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    color: AppColors.surfaceCard,
+                    alignment: Alignment.center,
+                    child: const Icon(
+                      Icons.broken_image,
+                      color: AppColors.textMuted,
+                      size: 64,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceCard,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    catchRecord.species,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (catchRecord.weight != null) ...[
+                        Text(
+                          '${catchRecord.weight} lbs',
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                      ],
+                      if (catchRecord.length != null)
+                        Text(
+                          '${catchRecord.length}"',
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    DateFormat(
+                      'MMM d, yyyy • h:mm a',
+                    ).format(catchRecord.timestamp),
+                    style: const TextStyle(
+                      color: AppColors.textMuted,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            IconButton(
+              onPressed: () => Navigator.pop(context),
+              icon: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceCard,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.close, color: AppColors.textPrimary),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final hasPhoto = catchRecord.photoUrl != null;
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
@@ -345,24 +433,13 @@ class _CatchCard extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
+          onTap: hasPhoto ? () => _showPhotoViewer(context) : null,
           onLongPress: onDelete,
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryGreen.withAlpha(40),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.set_meal,
-                    color: AppColors.primaryGreen,
-                    size: 28,
-                  ),
-                ),
+                _buildThumbnail(),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
@@ -380,8 +457,11 @@ class _CatchCard extends StatelessWidget {
                       Row(
                         children: [
                           if (catchRecord.weight != null) ...[
-                            const Icon(Icons.monitor_weight_outlined,
-                                size: 14, color: AppColors.textMuted),
+                            const Icon(
+                              Icons.monitor_weight_outlined,
+                              size: 14,
+                              color: AppColors.textMuted,
+                            ),
                             const SizedBox(width: 4),
                             Text(
                               '${catchRecord.weight} lbs',
@@ -393,8 +473,11 @@ class _CatchCard extends StatelessWidget {
                             const SizedBox(width: 12),
                           ],
                           if (catchRecord.length != null) ...[
-                            const Icon(Icons.straighten,
-                                size: 14, color: AppColors.textMuted),
+                            const Icon(
+                              Icons.straighten,
+                              size: 14,
+                              color: AppColors.textMuted,
+                            ),
                             const SizedBox(width: 4),
                             Text(
                               '${catchRecord.length}"',
@@ -409,8 +492,11 @@ class _CatchCard extends StatelessWidget {
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          const Icon(Icons.catching_pokemon,
-                              size: 14, color: AppColors.accentOrange),
+                          const Icon(
+                            Icons.catching_pokemon,
+                            size: 14,
+                            color: AppColors.accentOrange,
+                          ),
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
@@ -445,12 +531,55 @@ class _CatchCard extends StatelessWidget {
                         color: AppColors.textMuted,
                       ),
                     ),
+                    if (hasPhoto) ...[
+                      const SizedBox(height: 4),
+                      const Icon(
+                        Icons.photo,
+                        size: 16,
+                        color: AppColors.accentGold,
+                      ),
+                    ],
                   ],
                 ),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildThumbnail() {
+    if (catchRecord.photoUrl != null) {
+      return Container(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Image.file(
+            File(catchRecord.photoUrl!),
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) => _buildDefaultIcon(),
+          ),
+        ),
+      );
+    }
+    return _buildDefaultIcon();
+  }
+
+  Widget _buildDefaultIcon() {
+    return Container(
+      width: 56,
+      height: 56,
+      decoration: BoxDecoration(
+        color: AppColors.primaryGreen.withAlpha(40),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: const Icon(
+        Icons.set_meal,
+        color: AppColors.primaryGreen,
+        size: 28,
       ),
     );
   }

@@ -8,11 +8,7 @@ class ForecastCard extends StatelessWidget {
   final BiteForecast forecast;
   final VoidCallback? onTap;
 
-  const ForecastCard({
-    super.key,
-    required this.forecast,
-    this.onTap,
-  });
+  const ForecastCard({super.key, required this.forecast, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -124,10 +120,7 @@ class ForecastCard extends StatelessWidget {
           children: [
             Text(
               DateFormat('ha').format(hour.hour).toLowerCase(),
-              style: const TextStyle(
-                fontSize: 12,
-                color: AppColors.textMuted,
-              ),
+              style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
             ),
             const SizedBox(height: 4),
             Container(
@@ -154,11 +147,7 @@ class ForecastCard extends StatelessWidget {
             ),
             if (hour.isSolunarPeak) ...[
               const SizedBox(height: 2),
-              const Icon(
-                Icons.star,
-                size: 12,
-                color: AppColors.accentGold,
-              ),
+              const Icon(Icons.star, size: 12, color: AppColors.accentGold),
             ],
           ],
         );
@@ -170,14 +159,15 @@ class ForecastCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: const BoxDecoration(
-        border: Border(
-          top: BorderSide(color: AppColors.surfaceElevated),
-        ),
+        border: Border(top: BorderSide(color: AppColors.surfaceElevated)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.lightbulb_outline,
-              size: 16, color: AppColors.accentGold),
+          const Icon(
+            Icons.lightbulb_outline,
+            size: 16,
+            color: AppColors.accentGold,
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
