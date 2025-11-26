@@ -194,20 +194,18 @@ process_issue() {
     local prompt=$(generate_prompt "$type" "$number" "$title" "$body")
     
     echo -e "   ${BLUE}🤖 Running Claude Code...${NC}"
-    echo "$prompt" | claude --print
-    
+    claude -p "$prompt" --allowedTools "Edit,Write,Read,Glob,Grep,Bash"
+
     # Run code review if there are changes
     if [ -n "$(git status --porcelain)" ]; then
         echo -e "   ${BLUE}🔍 Running code review...${NC}"
-        claude --print "
-Review the changes you just made. Check for:
+        claude -p "Review the changes you just made. Check for:
 - Bugs and errors
-- Security issues  
+- Security issues
 - Code quality problems
 - Missing error handling
 
-If you find issues, fix them now. If everything looks good, confirm.
-"
+If you find issues, fix them now. If everything looks good, confirm." --allowedTools "Edit,Write,Read,Glob,Grep,Bash"
     fi
     
     # Check for changes
