@@ -364,8 +364,8 @@ process_pr_review() {
     # Get review threads (requested changes)
     local reviews=$(gh api "repos/${REPO}/pulls/${pr_number}/reviews" --jq '.[] | select(.state == "CHANGES_REQUESTED") | {id: .id, body: .body, user: .user.login}' 2>/dev/null || echo "")
 
-    # Get PR issue comments (regular comments on the PR)
-    local issue_comments=$(gh api "repos/${REPO}/issues/${pr_number}/comments" --jq '.[] | select(.body | test("change|fix|update|add|remove|improve"; "i")) | {id: .id, body: .body, user: .user.login}' 2>/dev/null || echo "")
+    # Get PR issue comments (regular comments - exclude bot's own comments)
+    local issue_comments=$(gh api "repos/${REPO}/issues/${pr_number}/comments" --jq '[.[] | select(.body | test("Claude Code Bot"; "i") | not)] | .[-5:] | .[] | {id: .id, body: .body, user: .user.login}' 2>/dev/null || echo "")
 
     # Combine all feedback
     local all_feedback=""
