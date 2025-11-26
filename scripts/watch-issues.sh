@@ -114,10 +114,11 @@ generate_prompt() {
 ${body}
 
 ## Instructions
-1. Explore the codebase to understand its structure
-2. Implement this feature following existing patterns
-3. Add appropriate tests if test suite exists
-4. Update documentation if needed
+1. **Read CLAUDE.md first** to understand the project architecture, patterns, and conventions
+2. Explore the codebase to understand existing structure
+3. Implement this feature following existing patterns (Provider for state, GoRouter for navigation, etc.)
+4. Add appropriate tests if test suite exists
+5. Update documentation if needed
 
 Please implement this feature now.
 EOF
@@ -131,10 +132,11 @@ EOF
 ${body}
 
 ## Instructions
-1. Locate the root cause of this bug
-2. Fix it with minimal, focused changes
-3. Add a regression test to prevent recurrence
-4. Verify fix doesn't break other functionality
+1. **Read CLAUDE.md first** to understand the project architecture and conventions
+2. Locate the root cause of this bug
+3. Fix it with minimal, focused changes following existing patterns
+4. Add a regression test to prevent recurrence
+5. Verify fix doesn't break other functionality
 
 Please fix this bug now.
 EOF
@@ -148,10 +150,11 @@ EOF
 ${body}
 
 ## Instructions
-1. Understand what needs to be changed
-2. Make changes without altering functionality (unless specified)
-3. Ensure all existing tests still pass
-4. Update documentation if needed
+1. **Read CLAUDE.md first** to understand the project architecture and conventions
+2. Understand what needs to be changed
+3. Make changes without altering functionality (unless specified)
+4. Ensure all existing tests still pass
+5. Update documentation if needed
 
 Please complete this task now.
 EOF
