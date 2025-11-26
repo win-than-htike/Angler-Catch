@@ -9,7 +9,8 @@
 # Example: ./watch-issues.sh my-username/my-repo 60
 #
 
-set -e
+# Don't exit on errors - we handle them with retry logic
+set +e
 
 # Configuration
 REPO="${1:-$(gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null || echo "")}"
@@ -233,13 +234,71 @@ I couldn't determine what changes to make for this issue.
         return
     fi
     
-    # Commit
+    # Commit with retry logic
     echo -e "   ${BLUE}💾 Committing changes...${NC}"
-    git commit -m "${prefix}: ${title} (#${number})"
-    
-    # Push
+    local max_retries=3
+    local retry=0
+    local commit_success=false
+
+    while [ $retry -lt $max_retries ] && [ "$commit_success" = false ]; do
+        if git commit -m "${prefix}: ${title} (#${number})" 2>&1; then
+            commit_success=true
+            echo -e "   ${GREEN}✅ Commit successful${NC}"
+        else
+            retry=$((retry + 1))
+            echo -e "   ${YELLOW}⚠️ Commit failed (attempt $retry/$max_retries), attempting to fix...${NC}"
+
+            # Run fixers manually
+            echo -e "   ${BLUE}🔧 Running dart format...${NC}"
+            dart format lib/ 2>/dev/null || true
+
+            echo -e "   ${BLUE}🔧 Running dart fix...${NC}"
+            dart fix --apply lib/ 2>/dev/null || true
+
+            # Re-stage all changes
+            git add -A
+
+            # If still failing after manual fixes, ask Claude to fix
+            if [ $retry -eq 2 ]; then
+                echo -e "   ${BLUE}🤖 Asking Claude to fix remaining issues...${NC}"
+                claude -p "The commit is failing due to pre-commit hook errors. Please check the staged files, fix any linting/formatting issues, and ensure the code passes dart analyze. Fix the issues now." --dangerously-skip-permissions --verbose
+                git add -A
+            fi
+        fi
+    done
+
+    if [ "$commit_success" = false ]; then
+        echo -e "   ${RED}❌ Commit failed after $max_retries attempts${NC}"
+        gh issue comment "$number" --repo "$REPO" --body "## ⚠️ Commit Failed
+
+The implementation was created but the commit failed after multiple retry attempts due to pre-commit hook errors.
+
+**Branch:** \`${branch}\`
+
+Please review and fix manually.
+
+---
+*🤖 Claude Code Bot*"
+        git checkout "$default_branch"
+        return
+    fi
+
+    # Push with retry
     echo -e "   ${BLUE}📤 Pushing to origin...${NC}"
-    git push origin "$branch"
+    if ! git push origin "$branch" 2>&1; then
+        echo -e "   ${YELLOW}⚠️ Push failed, retrying...${NC}"
+        sleep 2
+        git push origin "$branch" || {
+            echo -e "   ${RED}❌ Push failed${NC}"
+            gh issue comment "$number" --repo "$REPO" --body "## ⚠️ Push Failed
+
+The commit succeeded but push failed. Branch \`${branch}\` exists locally.
+
+---
+*🤖 Claude Code Bot*"
+            return
+        }
+    fi
     
     # Create PR
     echo -e "   ${BLUE}📝 Creating pull request...${NC}"
