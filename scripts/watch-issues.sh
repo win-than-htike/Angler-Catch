@@ -358,11 +358,14 @@ process_pr_review() {
     echo -e "🔄 ${CYAN}PR #${pr_number}${NC}: ${pr_title}"
     echo -e "   Branch: ${YELLOW}${pr_branch}${NC}"
 
-    # Get review comments
-    local comments=$(gh api "repos/${REPO}/pulls/${pr_number}/comments" --jq '.[] | {id: .id, path: .path, line: .line, body: .body, user: .user.login}' 2>/dev/null || echo "")
+    # Get inline code review comments
+    local inline_comments=$(gh api "repos/${REPO}/pulls/${pr_number}/comments" --jq '.[] | {id: .id, path: .path, line: .line, body: .body, user: .user.login}' 2>/dev/null || echo "")
 
     # Get review threads (requested changes)
     local reviews=$(gh api "repos/${REPO}/pulls/${pr_number}/reviews" --jq '.[] | select(.state == "CHANGES_REQUESTED") | {id: .id, body: .body, user: .user.login}' 2>/dev/null || echo "")
+
+    # Get PR issue comments (regular comments on the PR)
+    local issue_comments=$(gh api "repos/${REPO}/issues/${pr_number}/comments" --jq '.[] | select(.body | test("change|fix|update|add|remove|improve"; "i")) | {id: .id, body: .body, user: .user.login}' 2>/dev/null || echo "")
 
     # Combine all feedback
     local all_feedback=""
@@ -372,9 +375,14 @@ process_pr_review() {
         all_feedback+="$reviews\n\n"
     fi
 
-    if [ -n "$comments" ]; then
-        all_feedback+="## Inline Comments:\n"
-        all_feedback+="$comments\n\n"
+    if [ -n "$inline_comments" ]; then
+        all_feedback+="## Inline Code Comments:\n"
+        all_feedback+="$inline_comments\n\n"
+    fi
+
+    if [ -n "$issue_comments" ]; then
+        all_feedback+="## PR Comments:\n"
+        all_feedback+="$issue_comments\n\n"
     fi
 
     if [ -z "$all_feedback" ]; then
