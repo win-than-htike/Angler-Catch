@@ -244,18 +244,23 @@ class _ForecastScreenState extends State<ForecastScreen> {
           ),
           const SizedBox(height: 16),
           SizedBox(
-            height: 180,
+            height: 200,
             child: BarChart(
               BarChartData(
                 alignment: BarChartAlignment.spaceAround,
                 maxY: 100,
                 barTouchData: BarTouchData(
+                  enabled: true,
                   touchTooltipData: BarTouchTooltipData(
+                    fitInsideHorizontally: true,
+                    fitInsideVertically: true,
                     getTooltipColor: (group) => AppColors.surfaceElevated,
                     getTooltipItem: (group, groupIndex, rod, rodIndex) {
                       final hour = predictions[group.x.toInt()];
+                      final peakLabel = hour.isSolunarPeak ? ' ⭐' : '';
                       return BarTooltipItem(
-                        '${DateFormat('ha').format(hour.hour)}\n${hour.biteScore.round()}%',
+                        '${DateFormat('h a').format(hour.hour)}\n'
+                        '${hour.biteScore.round()}%$peakLabel',
                         const TextStyle(
                           color: AppColors.textPrimary,
                           fontSize: 12,
@@ -269,17 +274,27 @@ class _ForecastScreenState extends State<ForecastScreen> {
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
+                      reservedSize: 28,
                       getTitlesWidget: (value, meta) {
-                        if (value.toInt() % 4 != 0) {
+                        final index = value.toInt();
+                        if (index < 0 || index >= predictions.length) {
                           return const SizedBox.shrink();
                         }
-                        return Text(
-                          DateFormat('ha')
-                              .format(predictions[value.toInt()].hour)
-                              .toLowerCase(),
-                          style: const TextStyle(
-                            color: AppColors.textMuted,
-                            fontSize: 10,
+                        // Show labels at 6-hour intervals: 12am, 6am, 12pm, 6pm
+                        final hour = predictions[index].hour.hour;
+                        if (hour % 6 != 0) {
+                          return const SizedBox.shrink();
+                        }
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Text(
+                            DateFormat(
+                              'ha',
+                            ).format(predictions[index].hour).toLowerCase(),
+                            style: const TextStyle(
+                              color: AppColors.textMuted,
+                              fontSize: 10,
+                            ),
                           ),
                         );
                       },
@@ -299,6 +314,7 @@ class _ForecastScreenState extends State<ForecastScreen> {
                 borderData: FlBorderData(show: false),
                 barGroups: predictions.asMap().entries.map((entry) {
                   final hour = entry.value;
+                  final isSolunarPeak = hour.isSolunarPeak;
                   return BarChartGroupData(
                     x: entry.key,
                     barRods: [
@@ -309,9 +325,15 @@ class _ForecastScreenState extends State<ForecastScreen> {
                         borderRadius: const BorderRadius.vertical(
                           top: Radius.circular(4),
                         ),
+                        backDrawRodData: isSolunarPeak
+                            ? BackgroundBarChartRodData(
+                                show: true,
+                                toY: 100,
+                                color: AppColors.accentGold.withAlpha(40),
+                              )
+                            : null,
                       ),
                     ],
-                    showingTooltipIndicators: hour.isSolunarPeak ? [0] : [],
                   );
                 }).toList(),
               ),
