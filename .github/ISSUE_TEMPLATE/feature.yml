@@ -1,0 +1,63 @@
+name: ✨ Feature Request
+description: Request a new feature for Claude Code to implement
+labels: ["claude-implement", "type:feature"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Feature Request
+        Describe the feature you'd like Claude Code to implement.
+        
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+      description: A one-line summary of the feature
+      placeholder: "Add dark mode toggle to settings page"
+    validations:
+      required: true
+      
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Detailed description of the feature
+      placeholder: |
+        What should this feature do?
+        Why is it needed?
+        How should it work?
+    validations:
+      required: true
+      
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: How do we know when this is done?
+      placeholder: |
+        - [ ] User can toggle dark mode in settings
+        - [ ] Preference persists across sessions
+        - [ ] All pages respect the theme setting
+    validations:
+      required: true
+      
+  - type: textarea
+    id: technical
+    attributes:
+      label: Technical Notes (Optional)
+      description: Any technical guidance or constraints
+      placeholder: |
+        - Use CSS variables for theming
+        - Store preference in localStorage
+        - Consider system preference as default
+        
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - Low
+        - Medium
+        - High
+    validations:
+      required: true

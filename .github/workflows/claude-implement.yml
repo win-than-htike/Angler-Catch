@@ -1,0 +1,246 @@
+name: 🤖 Claude Code Auto-Implement
+
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  implement:
+    runs-on: self-hosted
+    if: github.event.label.name == 'claude-implement'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: Setup Git
+        run: |
+          git config user.name "Claude Code Bot"
+          git config user.email "claude-bot@example.com"
+          
+      - name: Determine Issue Type
+        id: issue_type
+        run: |
+          LABELS='${{ toJSON(github.event.issue.labels.*.name) }}'
+          
+          if echo "$LABELS" | grep -q "type:feature"; then
+            echo "type=feature" >> $GITHUB_OUTPUT
+            echo "emoji=✨" >> $GITHUB_OUTPUT
+            echo "prefix=feat" >> $GITHUB_OUTPUT
+          elif echo "$LABELS" | grep -q "type:bug"; then
+            echo "type=bug" >> $GITHUB_OUTPUT
+            echo "emoji=🐛" >> $GITHUB_OUTPUT
+            echo "prefix=fix" >> $GITHUB_OUTPUT
+          elif echo "$LABELS" | grep -q "type:chore"; then
+            echo "type=chore" >> $GITHUB_OUTPUT
+            echo "emoji=🔧" >> $GITHUB_OUTPUT
+            echo "prefix=chore" >> $GITHUB_OUTPUT
+          else
+            echo "type=feature" >> $GITHUB_OUTPUT
+            echo "emoji=📝" >> $GITHUB_OUTPUT
+            echo "prefix=feat" >> $GITHUB_OUTPUT
+          fi
+          
+      - name: Create branch
+        run: |
+          BRANCH_NAME="${{ steps.issue_type.outputs.prefix }}/issue-${{ github.event.issue.number }}"
+          git checkout -b "$BRANCH_NAME"
+          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
+          
+      - name: Implement Feature
+        if: steps.issue_type.outputs.type == 'feature'
+        run: |
+          claude --print "
+          # ✨ Feature Implementation Task
+          
+          You are implementing a NEW FEATURE for this codebase.
+          
+          ## Issue Details
+          - **Issue**: #${{ github.event.issue.number }}
+          - **Title**: ${{ github.event.issue.title }}
+          
+          ## Feature Description
+          ${{ github.event.issue.body }}
+          
+          ## Instructions
+          1. First, explore the codebase to understand its structure
+          2. Identify which files need to be created or modified
+          3. Implement the feature following existing patterns
+          4. Add tests if the project has a test suite
+          5. Update documentation if needed
+          
+          ## Quality Standards
+          - Follow existing code style
+          - Add comments for complex logic
+          - Handle edge cases and errors
+          - Keep functions small and focused
+          
+          Implement now.
+          "
+          
+      - name: Fix Bug
+        if: steps.issue_type.outputs.type == 'bug'
+        run: |
+          claude --print "
+          # 🐛 Bug Fix Task
+          
+          You are fixing a BUG in this codebase.
+          
+          ## Issue Details
+          - **Issue**: #${{ github.event.issue.number }}
+          - **Title**: ${{ github.event.issue.title }}
+          
+          ## Bug Report
+          ${{ github.event.issue.body }}
+          
+          ## Instructions
+          1. Understand the bug from the description
+          2. Locate the root cause (not just symptoms)
+          3. Fix with minimal changes
+          4. Add a test that would have caught this bug
+          5. Verify no regressions
+          
+          ## Quality Standards
+          - Fix the root cause
+          - Don't introduce new bugs
+          - Add regression test
+          - Document the fix in comments if complex
+          
+          Fix now.
+          "
+          
+      - name: Complete Chore
+        if: steps.issue_type.outputs.type == 'chore'
+        run: |
+          claude --print "
+          # 🔧 Chore / Maintenance Task
+          
+          You are completing a MAINTENANCE task for this codebase.
+          
+          ## Issue Details
+          - **Issue**: #${{ github.event.issue.number }}
+          - **Title**: ${{ github.event.issue.title }}
+          
+          ## Task Description
+          ${{ github.event.issue.body }}
+          
+          ## Instructions
+          1. Understand the scope of work
+          2. Make changes without altering functionality (unless specified)
+          3. Keep all existing tests passing
+          4. Update docs if needed
+          
+          ## Quality Standards
+          - Maintain backward compatibility
+          - Improve code quality
+          - Don't gold-plate - stay focused
+          
+          Complete now.
+          "
+          
+      - name: Code Review
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            claude --print "
+            # 🔍 Code Review
+            
+            Review the changes you just made.
+            
+            ## Check For
+            - Bugs or errors
+            - Security issues
+            - Code quality problems
+            - Missing edge cases
+            - Unnecessary changes
+            
+            If you find issues, FIX THEM NOW.
+            If everything looks good, confirm ready.
+            "
+          fi
+          
+      - name: Commit Changes
+        id: commit
+        run: |
+          git add -A
+          
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            git commit -m "${{ steps.issue_type.outputs.prefix }}: ${{ github.event.issue.title }} (#${{ github.event.issue.number }})"
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          fi
+          
+      - name: Push and Create PR
+        if: steps.commit.outputs.has_changes == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git push origin "$BRANCH_NAME"
+          
+          TYPE="${{ steps.issue_type.outputs.type }}"
+          EMOJI="${{ steps.issue_type.outputs.emoji }}"
+          
+          gh pr create \
+            --title "$EMOJI ${{ github.event.issue.title }}" \
+            --body "## $EMOJI Auto-implemented by Claude Code
+          
+          Closes #${{ github.event.issue.number }}
+          
+          ### Type: \`$TYPE\`
+          
+          ### Files Changed
+          \`\`\`
+          $(git diff --name-only HEAD~1)
+          \`\`\`
+          
+          ### Review Checklist
+          - [ ] Code review completed
+          - [ ] Tests pass
+          - [ ] Ready to merge
+          
+          ---
+          *🤖 Implemented using Claude Code*" \
+            --base main
+            
+      - name: Comment on Issue - Success
+        if: steps.commit.outputs.has_changes == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_URL=$(gh pr view "$BRANCH_NAME" --json url -q .url)
+          EMOJI="${{ steps.issue_type.outputs.emoji }}"
+          
+          gh issue comment ${{ github.event.issue.number }} \
+            --body "## $EMOJI Implementation Complete!
+            
+          I've created a pull request: $PR_URL
+          
+          Please review and merge when ready.
+          
+          ---
+          *🤖 Claude Code Bot*"
+            
+      - name: Comment on Issue - No Changes
+        if: steps.commit.outputs.has_changes == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue comment ${{ github.event.issue.number }} \
+            --body "## ⚠️ No Changes Made
+            
+          I analyzed this issue but couldn't determine what changes to make.
+          
+          **Possible reasons:**
+          - Need more details in the description
+          - Feature might already exist
+          - Need human guidance
+          
+          Please provide more context.
+          
+          ---
+          *🤖 Claude Code Bot*"
+          
+          gh issue edit ${{ github.event.issue.number }} --remove-label "claude-implement"

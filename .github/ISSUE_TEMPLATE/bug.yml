@@ -1,0 +1,72 @@
+name: 🐛 Bug Report
+description: Report a bug for Claude Code to fix
+labels: ["claude-implement", "type:bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Bug Report
+        Describe the bug so Claude Code can fix it.
+        
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+      description: A one-line summary of the bug
+      placeholder: "Login button not working on mobile"
+    validations:
+      required: true
+      
+  - type: textarea
+    id: current
+    attributes:
+      label: Current Behavior
+      description: What is happening now?
+      placeholder: "When I tap the login button on mobile, nothing happens. No error message, no loading state."
+    validations:
+      required: true
+      
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What should happen instead?
+      placeholder: "The login form should submit and redirect to the dashboard"
+    validations:
+      required: true
+      
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to Reproduce
+      description: How can we reproduce this bug?
+      placeholder: |
+        1. Open the app on a mobile device
+        2. Navigate to /login
+        3. Enter valid credentials
+        4. Tap the login button
+        5. Observe nothing happens
+    validations:
+      required: true
+      
+  - type: textarea
+    id: location
+    attributes:
+      label: Suspected Location (Optional)
+      description: Where do you think the bug might be?
+      placeholder: |
+        - File: src/components/LoginForm.tsx
+        - Function: handleSubmit()
+        - Might be related to touch event handling
+        
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - Low - Minor inconvenience
+        - Medium - Feature partially broken
+        - High - Feature completely broken
+        - Critical - App crashes or data loss
+    validations:
+      required: true
