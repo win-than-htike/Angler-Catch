@@ -330,6 +330,15 @@ class _CatchCard extends StatelessWidget {
                 child: Image.file(
                   File(catchRecord.photoUrl!),
                   fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    color: AppColors.surfaceCard,
+                    alignment: Alignment.center,
+                    child: const Icon(
+                      Icons.broken_image,
+                      color: AppColors.textMuted,
+                      size: 64,
+                    ),
+                  ),
                 ),
               ),
             ),

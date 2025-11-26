@@ -9,7 +9,6 @@ import '../../core/theme/app_colors.dart';
 import '../../core/widgets/angler_button.dart';
 import '../../data/models/catch_record.dart';
 import '../../data/providers/app_state.dart';
-import '../../data/services/photo_service.dart';
 
 class LogCatchScreen extends StatefulWidget {
   const LogCatchScreen({super.key});
@@ -21,7 +20,6 @@ class LogCatchScreen extends StatefulWidget {
 class _LogCatchScreenState extends State<LogCatchScreen> {
   final _formKey = GlobalKey<FormState>();
   final _notesController = TextEditingController();
-  final _photoService = PhotoService();
 
   String? _selectedSpecies;
   String? _selectedBait;
@@ -31,40 +29,83 @@ class _LogCatchScreenState extends State<LogCatchScreen> {
   double? _depth;
   DateTime _catchTime = DateTime.now();
   bool _isLoading = false;
+  bool _isProcessingPhoto = false;
   String? _photoPath;
+  bool _catchSaved = false;
 
   @override
   void dispose() {
     _notesController.dispose();
-    // Note: Don't delete photo here - user might navigate back and return
+    // Clean up orphaned photo if user navigates away without saving
+    if (!_catchSaved && _photoPath != null) {
+      final appState = context.read<AppState>();
+      appState.photoService.deletePhoto(_photoPath);
+    }
     super.dispose();
   }
 
   Future<void> _takePhoto() async {
-    final path = await _photoService.takePhoto();
-    if (path != null) {
-      // Delete old photo if replacing
-      if (_photoPath != null) {
-        await _photoService.deletePhoto(_photoPath);
+    final photoService = context.read<AppState>().photoService;
+    setState(() => _isProcessingPhoto = true);
+
+    try {
+      final path = await photoService.takePhoto();
+      if (path != null) {
+        // Delete old photo if replacing
+        if (_photoPath != null) {
+          await photoService.deletePhoto(_photoPath);
+        }
+        setState(() => _photoPath = path);
       }
-      setState(() => _photoPath = path);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to capture photo. Please try again.'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isProcessingPhoto = false);
+      }
     }
   }
 
   Future<void> _pickFromGallery() async {
-    final path = await _photoService.pickFromGallery();
-    if (path != null) {
-      // Delete old photo if replacing
-      if (_photoPath != null) {
-        await _photoService.deletePhoto(_photoPath);
+    final photoService = context.read<AppState>().photoService;
+    setState(() => _isProcessingPhoto = true);
+
+    try {
+      final path = await photoService.pickFromGallery();
+      if (path != null) {
+        // Delete old photo if replacing
+        if (_photoPath != null) {
+          await photoService.deletePhoto(_photoPath);
+        }
+        setState(() => _photoPath = path);
       }
-      setState(() => _photoPath = path);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to select photo. Please try again.'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isProcessingPhoto = false);
+      }
     }
   }
 
   Future<void> _removePhoto() async {
     if (_photoPath != null) {
-      await _photoService.deletePhoto(_photoPath);
+      final photoService = context.read<AppState>().photoService;
+      await photoService.deletePhoto(_photoPath);
       setState(() => _photoPath = null);
     }
   }
@@ -209,6 +250,7 @@ class _LogCatchScreenState extends State<LogCatchScreen> {
     );
 
     await appState.addCatch(catchRecord);
+    _catchSaved = true;
 
     if (mounted) {
       setState(() => _isLoading = false);
@@ -486,6 +528,30 @@ class _LogCatchScreenState extends State<LogCatchScreen> {
   }
 
   Widget _buildPhotoSection() {
+    // Show loading indicator while processing photo
+    if (_isProcessingPhoto) {
+      return Container(
+        height: 120,
+        decoration: BoxDecoration(
+          color: AppColors.surfaceElevated,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(color: AppColors.accentOrange),
+              SizedBox(height: 12),
+              Text(
+                'Processing photo...',
+                style: TextStyle(color: AppColors.textMuted, fontSize: 14),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     if (_photoPath != null) {
       return GestureDetector(
         onTap: _showPhotoOptions,

@@ -9,8 +9,8 @@ class PhotoService {
   final ImagePicker _picker = ImagePicker();
 
   static const String _photoDirectory = 'catch_photos';
-  static const int _maxImageWidth = 1200;
-  static const int _maxImageHeight = 1200;
+  static const int _maxImageWidth = 1024;
+  static const int _maxImageHeight = 1024;
   static const int _imageQuality = 85;
 
   /// Takes a photo using the device camera.

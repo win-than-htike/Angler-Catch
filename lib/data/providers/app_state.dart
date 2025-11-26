@@ -52,6 +52,7 @@ class AppState extends ChangeNotifier {
   List<BiteForecast> get biteForecast => _biteForecast;
   List<Hotspot> get hotspots => _hotspots;
   UserProfile? get userProfile => _userProfile;
+  PhotoService get photoService => _photoService;
 
   bool get isOnboardingComplete => _userRepository.isOnboardingComplete();
 
