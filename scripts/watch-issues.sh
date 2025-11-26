@@ -348,6 +348,157 @@ Please review and merge when ready.
     git checkout "$default_branch"
 }
 
+# Process PR review comments
+process_pr_review() {
+    local pr_number="$1"
+    local pr_title="$2"
+    local pr_branch="$3"
+
+    echo -e "\n${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "🔄 ${CYAN}PR #${pr_number}${NC}: ${pr_title}"
+    echo -e "   Branch: ${YELLOW}${pr_branch}${NC}"
+
+    # Get review comments
+    local comments=$(gh api "repos/${REPO}/pulls/${pr_number}/comments" --jq '.[] | {id: .id, path: .path, line: .line, body: .body, user: .user.login}' 2>/dev/null || echo "")
+
+    # Get review threads (requested changes)
+    local reviews=$(gh api "repos/${REPO}/pulls/${pr_number}/reviews" --jq '.[] | select(.state == "CHANGES_REQUESTED") | {id: .id, body: .body, user: .user.login}' 2>/dev/null || echo "")
+
+    # Combine all feedback
+    local all_feedback=""
+
+    if [ -n "$reviews" ]; then
+        all_feedback+="## Review Comments (Changes Requested):\n"
+        all_feedback+="$reviews\n\n"
+    fi
+
+    if [ -n "$comments" ]; then
+        all_feedback+="## Inline Comments:\n"
+        all_feedback+="$comments\n\n"
+    fi
+
+    if [ -z "$all_feedback" ]; then
+        echo -e "   ${YELLOW}No review comments found${NC}"
+        gh pr edit "$pr_number" --repo "$REPO" --remove-label "needs-changes" 2>/dev/null || true
+        return
+    fi
+
+    echo -e "   ${GREEN}Found review feedback${NC}"
+
+    # Get default branch
+    local default_branch=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@' || echo "main")
+
+    # Checkout PR branch
+    echo -e "   ${BLUE}📥 Checking out PR branch...${NC}"
+    git fetch origin "$pr_branch" 2>/dev/null || true
+    git checkout "$pr_branch" 2>/dev/null || git checkout -b "$pr_branch" "origin/$pr_branch"
+    git pull origin "$pr_branch" 2>/dev/null || true
+
+    # Generate prompt for Claude
+    local prompt=$(cat <<EOF
+# 🔄 PR Review Fixes Required
+
+## PR #${pr_number}: ${pr_title}
+
+## Reviewer Feedback:
+${all_feedback}
+
+## Instructions
+1. **Read CLAUDE.md first** to understand the project architecture
+2. Read each review comment carefully
+3. Make the requested changes to address ALL feedback
+4. Follow existing code patterns and conventions
+5. Do NOT remove or break existing functionality
+
+Please fix all the issues mentioned in the review comments now.
+EOF
+)
+
+    echo -e "   ${BLUE}🤖 Running Claude Code to fix review comments...${NC}"
+    echo -e "   ${CYAN}━━━━━━━━━━━ Claude Output ━━━━━━━━━━━${NC}"
+    claude -p "$prompt" --dangerously-skip-permissions --verbose
+    echo -e "   ${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+
+    # Check for changes
+    git add -A
+    if git diff --staged --quiet; then
+        echo -e "   ${YELLOW}No changes made${NC}"
+        gh pr comment "$pr_number" --repo "$REPO" --body "## ℹ️ Review Processed
+
+I reviewed the feedback but couldn't determine what changes to make. Please provide more specific details.
+
+---
+*🤖 Claude Code Bot*"
+        gh pr edit "$pr_number" --repo "$REPO" --remove-label "needs-changes"
+        git checkout "$default_branch"
+        return
+    fi
+
+    # Commit with retry logic
+    echo -e "   ${BLUE}💾 Committing fixes...${NC}"
+    local commit_success=false
+    local retry=0
+    local max_retries=3
+
+    while [ $retry -lt $max_retries ] && [ "$commit_success" = false ]; do
+        if git commit -m "fix: address PR review comments (#${pr_number})" 2>&1; then
+            commit_success=true
+            echo -e "   ${GREEN}✅ Commit successful${NC}"
+        else
+            retry=$((retry + 1))
+            echo -e "   ${YELLOW}⚠️ Commit failed (attempt $retry/$max_retries), fixing...${NC}"
+            dart format lib/ 2>/dev/null || true
+            dart fix --apply lib/ 2>/dev/null || true
+            git add -A
+
+            if [ $retry -eq 2 ]; then
+                claude -p "Fix any linting/formatting issues in the staged files." --dangerously-skip-permissions --verbose
+                git add -A
+            fi
+        fi
+    done
+
+    if [ "$commit_success" = false ]; then
+        echo -e "   ${RED}❌ Commit failed${NC}"
+        git checkout "$default_branch"
+        return
+    fi
+
+    # Push
+    echo -e "   ${BLUE}📤 Pushing fixes...${NC}"
+    if ! git push origin "$pr_branch" 2>&1; then
+        echo -e "   ${YELLOW}⚠️ Push failed, retrying...${NC}"
+        sleep 2
+        git push origin "$pr_branch" || {
+            echo -e "   ${RED}❌ Push failed${NC}"
+            git checkout "$default_branch"
+            return
+        }
+    fi
+
+    # Comment on PR
+    gh pr comment "$pr_number" --repo "$REPO" --body "## ✅ Review Comments Addressed
+
+I've pushed fixes to address the review feedback:
+
+\`\`\`
+$(git diff --name-only HEAD~1)
+\`\`\`
+
+Please review the changes.
+
+---
+*🤖 Claude Code Bot*"
+
+    # Remove label
+    gh pr edit "$pr_number" --repo "$REPO" --remove-label "needs-changes"
+
+    echo -e "   ${GREEN}✅ PR review comments addressed!${NC}"
+
+    # Return to default branch
+    git checkout "$default_branch"
+}
+
 # Main loop
 main() {
     check_requirements
@@ -360,38 +511,71 @@ main() {
     
     echo -e "Repository: ${GREEN}${REPO}${NC}"
     echo -e "Poll interval: ${YELLOW}${POLL_INTERVAL}s${NC}"
-    echo -e "\n${CYAN}Watching for issues with 'claude-implement' label...${NC}"
+    echo -e "\n${CYAN}Watching for:${NC}"
+    echo -e "  • Issues with ${GREEN}'claude-implement'${NC} label"
+    echo -e "  • PRs with ${GREEN}'needs-changes'${NC} label"
     echo -e "${YELLOW}Press Ctrl+C to stop${NC}\n"
-    
+
     while true; do
-        echo -e "${BLUE}[$(date '+%Y-%m-%d %H:%M:%S')]${NC} Checking for issues..."
-        
-        # Get issues with claude-implement label
+        echo -e "${BLUE}[$(date '+%Y-%m-%d %H:%M:%S')]${NC} Checking..."
+
+        # ═══════════════════════════════════════════════════════
+        # Check for issues with claude-implement label
+        # ═══════════════════════════════════════════════════════
+        echo -e "   ${BLUE}📋 Issues:${NC}"
         local issues=$(gh issue list \
             --repo "$REPO" \
             --label "claude-implement" \
             --state open \
             --json number,title,body,labels \
             --limit 10 2>/dev/null || echo "[]")
-        
-        local count=$(echo "$issues" | jq length)
-        
-        if [ "$count" -eq 0 ]; then
-            echo -e "   ${YELLOW}No issues found${NC}"
+
+        local issue_count=$(echo "$issues" | jq length)
+
+        if [ "$issue_count" -eq 0 ]; then
+            echo -e "      ${YELLOW}No issues with 'claude-implement' label${NC}"
         else
-            echo -e "   ${GREEN}Found ${count} issue(s)${NC}"
-            
+            echo -e "      ${GREEN}Found ${issue_count} issue(s) to implement${NC}"
+
             # Process each issue
             echo "$issues" | jq -c '.[]' | while read -r issue; do
                 local number=$(echo "$issue" | jq -r '.number')
                 local title=$(echo "$issue" | jq -r '.title')
                 local body=$(echo "$issue" | jq -r '.body')
                 local labels=$(echo "$issue" | jq -r '[.labels[].name] | join(",")')
-                
+
                 process_issue "$number" "$title" "$body" "$labels"
             done
         fi
-        
+
+        # ═══════════════════════════════════════════════════════
+        # Check for PRs with needs-changes label
+        # ═══════════════════════════════════════════════════════
+        echo -e "   ${BLUE}🔄 Pull Requests:${NC}"
+        local prs=$(gh pr list \
+            --repo "$REPO" \
+            --label "needs-changes" \
+            --state open \
+            --json number,title,headRefName \
+            --limit 10 2>/dev/null || echo "[]")
+
+        local pr_count=$(echo "$prs" | jq length)
+
+        if [ "$pr_count" -eq 0 ]; then
+            echo -e "      ${YELLOW}No PRs with 'needs-changes' label${NC}"
+        else
+            echo -e "      ${GREEN}Found ${pr_count} PR(s) needing changes${NC}"
+
+            # Process each PR
+            echo "$prs" | jq -c '.[]' | while read -r pr; do
+                local pr_number=$(echo "$pr" | jq -r '.number')
+                local pr_title=$(echo "$pr" | jq -r '.title')
+                local pr_branch=$(echo "$pr" | jq -r '.headRefName')
+
+                process_pr_review "$pr_number" "$pr_title" "$pr_branch"
+            done
+        fi
+
         echo -e "${YELLOW}Next check in ${POLL_INTERVAL}s...${NC}\n"
         sleep "$POLL_INTERVAL"
     done
