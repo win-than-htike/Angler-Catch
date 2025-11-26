@@ -1,0 +1,27 @@
+# Lefthook configuration for Flutter pre-commit hooks
+# https://github.com/evilmartians/lefthook
+
+pre-commit:
+  parallel: false
+  commands:
+    dart-format:
+      glob: "*.dart"
+      run: dart format --set-exit-if-changed {staged_files}
+      stage_fixed: true
+
+    dart-fix:
+      glob: "*.dart"
+      run: dart fix --apply {staged_files}
+      stage_fixed: true
+
+    flutter-analyze:
+      glob: "*.dart"
+      run: flutter analyze --no-pub
+      fail_text: "Flutter analyze found issues. Please fix them before committing."
+
+pre-push:
+  parallel: true
+  commands:
+    flutter-test:
+      run: flutter test --no-pub
+      fail_text: "Tests failed. Please fix them before pushing."
