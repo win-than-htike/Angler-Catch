@@ -361,8 +361,8 @@ process_pr_review() {
     # Get inline code review comments
     local inline_comments=$(gh api "repos/${REPO}/pulls/${pr_number}/comments" --jq '.[] | {id: .id, path: .path, line: .line, body: .body, user: .user.login}' 2>/dev/null || echo "")
 
-    # Get review threads (requested changes)
-    local reviews=$(gh api "repos/${REPO}/pulls/${pr_number}/reviews" --jq '.[] | select(.state == "CHANGES_REQUESTED") | {id: .id, body: .body, user: .user.login}' 2>/dev/null || echo "")
+    # Get review threads (changes requested OR commented with feedback, exclude bots)
+    local reviews=$(gh api "repos/${REPO}/pulls/${pr_number}/reviews" --jq '[.[] | select(.body != "" and (.user.login | test("bot|copilot"; "i") | not))] | .[-3:] | .[] | {id: .id, body: .body, user: .user.login, state: .state}' 2>/dev/null || echo "")
 
     # Get PR issue comments (regular comments - exclude bot's own comments)
     local issue_comments=$(gh api "repos/${REPO}/issues/${pr_number}/comments" --jq '[.[] | select(.body | test("Claude Code Bot"; "i") | not)] | .[-5:] | .[] | {id: .id, body: .body, user: .user.login}' 2>/dev/null || echo "")
