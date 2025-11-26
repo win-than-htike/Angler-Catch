@@ -194,7 +194,9 @@ process_issue() {
     local prompt=$(generate_prompt "$type" "$number" "$title" "$body")
     
     echo -e "   ${BLUE}🤖 Running Claude Code...${NC}"
-    claude -p "$prompt" --allowedTools "Edit,Write,Read,Glob,Grep,Bash"
+    echo -e "   ${CYAN}━━━━━━━━━━━ Claude Output ━━━━━━━━━━━${NC}"
+    claude -p "$prompt" --dangerously-skip-permissions --verbose
+    echo -e "   ${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 
     # Run code review if there are changes
     if [ -n "$(git status --porcelain)" ]; then
@@ -205,7 +207,7 @@ process_issue() {
 - Code quality problems
 - Missing error handling
 
-If you find issues, fix them now. If everything looks good, confirm." --allowedTools "Edit,Write,Read,Glob,Grep,Bash"
+If you find issues, fix them now. If everything looks good, confirm." --dangerously-skip-permissions --verbose
     fi
     
     # Check for changes
