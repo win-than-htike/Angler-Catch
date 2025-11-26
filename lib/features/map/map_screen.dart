@@ -21,8 +21,8 @@ class _MapScreenState extends State<MapScreen> {
   Widget build(BuildContext context) {
     return Consumer<AppState>(
       builder: (context, appState, child) {
-        final location = appState.currentLocation ??
-            const LatLng(37.7749, -122.4194);
+        final location =
+            appState.currentLocation ?? const LatLng(37.7749, -122.4194);
 
         return Scaffold(
           body: Stack(
@@ -43,9 +43,7 @@ class _MapScreenState extends State<MapScreen> {
                     userAgentPackageName: 'com.anglercatch.app',
                     tileBuilder: _darkTileBuilder,
                   ),
-                  CircleLayer(
-                    circles: _buildHotspotCircles(appState.hotspots),
-                  ),
+                  CircleLayer(circles: _buildHotspotCircles(appState.hotspots)),
                   MarkerLayer(
                     markers: [
                       _buildCurrentLocationMarker(location),
@@ -73,10 +71,26 @@ class _MapScreenState extends State<MapScreen> {
   ) {
     return ColorFiltered(
       colorFilter: const ColorFilter.matrix(<double>[
-        0.3, 0, 0, 0, 0,
-        0, 0.3, 0, 0, 0,
-        0, 0, 0.4, 0, 0,
-        0, 0, 0, 1, 0,
+        0.3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0.3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0.4,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
       ]),
       child: tileWidget,
     );
@@ -113,11 +127,7 @@ class _MapScreenState extends State<MapScreen> {
             ),
           ],
         ),
-        child: const Icon(
-          Icons.my_location,
-          color: Colors.white,
-          size: 20,
-        ),
+        child: const Icon(Icons.my_location, color: Colors.white, size: 20),
       ),
     );
   }
@@ -178,11 +188,7 @@ class _MapScreenState extends State<MapScreen> {
             shape: BoxShape.circle,
             border: Border.all(color: Colors.white, width: 2),
           ),
-          child: const Icon(
-            Icons.star,
-            color: Colors.white,
-            size: 14,
-          ),
+          child: const Icon(Icons.star, color: Colors.white, size: 14),
         ),
       );
     }).toList();
@@ -199,10 +205,7 @@ class _MapScreenState extends State<MapScreen> {
           color: AppColors.surfaceCard.withAlpha(230),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha(40),
-              blurRadius: 8,
-            ),
+            BoxShadow(color: Colors.black.withAlpha(40), blurRadius: 8),
           ],
         ),
         child: Row(
@@ -237,18 +240,12 @@ class _MapScreenState extends State<MapScreen> {
         Container(
           width: 12,
           height: 12,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 4),
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 12,
-            color: AppColors.textSecondary,
-          ),
+          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
         ),
       ],
     );
@@ -375,10 +372,7 @@ class _MapScreenState extends State<MapScreen> {
               spacing: 8,
               children: hotspot.species.map((species) {
                 return Chip(
-                  label: Text(
-                    species,
-                    style: const TextStyle(fontSize: 12),
-                  ),
+                  label: Text(species, style: const TextStyle(fontSize: 12)),
                   backgroundColor: AppColors.surfaceElevated,
                   padding: EdgeInsets.zero,
                   visualDensity: VisualDensity.compact,
@@ -402,10 +396,7 @@ class _MapControlButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onPressed;
 
-  const _MapControlButton({
-    required this.icon,
-    required this.onPressed,
-  });
+  const _MapControlButton({required this.icon, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
@@ -414,10 +405,7 @@ class _MapControlButton extends StatelessWidget {
         color: AppColors.surfaceCard,
         shape: BoxShape.circle,
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(40),
-            blurRadius: 8,
-          ),
+          BoxShadow(color: Colors.black.withAlpha(40), blurRadius: 8),
         ],
       ),
       child: IconButton(

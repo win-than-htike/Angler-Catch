@@ -20,7 +20,9 @@ class ProfileScreen extends StatelessWidget {
               _buildAppBar(context, profile),
               SliverToBoxAdapter(child: _buildProfileHeader(profile)),
               SliverToBoxAdapter(child: _buildStatsSection(profile)),
-              SliverToBoxAdapter(child: _buildSettingsSection(context, profile)),
+              SliverToBoxAdapter(
+                child: _buildSettingsSection(context, profile),
+              ),
               SliverToBoxAdapter(child: _buildAboutSection(context)),
               const SliverToBoxAdapter(child: SizedBox(height: 32)),
             ],
@@ -73,11 +75,7 @@ class ProfileScreen extends StatelessWidget {
               color: Colors.white.withAlpha(50),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
-              Icons.person,
-              size: 48,
-              color: Colors.white,
-            ),
+            child: const Icon(Icons.person, size: 48, color: Colors.white),
           ),
           const SizedBox(width: 20),
           Expanded(
@@ -200,7 +198,11 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _buildStatTile(
-      String label, String value, IconData icon, Color color) {
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(16),
@@ -226,10 +228,7 @@ class ProfileScreen extends StatelessWidget {
             ),
             Text(
               label,
-              style: const TextStyle(
-                fontSize: 12,
-                color: AppColors.textMuted,
-              ),
+              style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
             ),
           ],
         ),
@@ -268,8 +267,8 @@ class ProfileScreen extends StatelessWidget {
               value: settings.notificationsEnabled,
               onChanged: (value) {
                 context.read<AppState>().updateSettings(
-                      settings.copyWith(notificationsEnabled: value),
-                    );
+                  settings.copyWith(notificationsEnabled: value),
+                );
               },
               activeColor: AppColors.accentOrange,
             ),
@@ -282,8 +281,8 @@ class ProfileScreen extends StatelessWidget {
               value: settings.locationEnabled,
               onChanged: (value) {
                 context.read<AppState>().updateSettings(
-                      settings.copyWith(locationEnabled: value),
-                    );
+                  settings.copyWith(locationEnabled: value),
+                );
               },
               activeColor: AppColors.accentOrange,
             ),
@@ -327,17 +326,11 @@ class ProfileScreen extends StatelessWidget {
       leading: Icon(icon, color: AppColors.accentOrange),
       title: Text(
         title,
-        style: const TextStyle(
-          fontSize: 16,
-          color: AppColors.textPrimary,
-        ),
+        style: const TextStyle(fontSize: 16, color: AppColors.textPrimary),
       ),
       subtitle: Text(
         subtitle,
-        style: const TextStyle(
-          fontSize: 12,
-          color: AppColors.textMuted,
-        ),
+        style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
       ),
       trailing: trailing,
       onTap: onTap,
@@ -375,10 +368,7 @@ class ProfileScreen extends StatelessWidget {
             icon: Icons.delete_outline,
             title: 'Clear All Data',
             subtitle: 'Delete all catches and settings',
-            trailing: const Icon(
-              Icons.chevron_right,
-              color: AppColors.error,
-            ),
+            trailing: const Icon(Icons.chevron_right, color: AppColors.error),
             onTap: () => _showClearDataDialog(context),
           ),
         ],
@@ -410,8 +400,8 @@ class ProfileScreen extends StatelessWidget {
             onPressed: () {
               if (profile != null) {
                 context.read<AppState>().updateProfile(
-                      profile.copyWith(name: nameController.text),
-                    );
+                  profile.copyWith(name: nameController.text),
+                );
               }
               Navigator.pop(context);
             },
@@ -438,8 +428,8 @@ class ProfileScreen extends StatelessWidget {
                 groupValue: settings.unitSystem,
                 onChanged: (value) {
                   context.read<AppState>().updateSettings(
-                        settings.copyWith(unitSystem: value),
-                      );
+                    settings.copyWith(unitSystem: value),
+                  );
                   Navigator.pop(context);
                 },
               ),
@@ -451,8 +441,8 @@ class ProfileScreen extends StatelessWidget {
                 groupValue: settings.unitSystem,
                 onChanged: (value) {
                   context.read<AppState>().updateSettings(
-                        settings.copyWith(unitSystem: value),
-                      );
+                    settings.copyWith(unitSystem: value),
+                  );
                   Navigator.pop(context);
                 },
               ),
@@ -498,8 +488,8 @@ class ProfileScreen extends StatelessWidget {
             TextButton(
               onPressed: () {
                 context.read<AppState>().updateSettings(
-                      settings.copyWith(minBiteScoreAlert: threshold),
-                    );
+                  settings.copyWith(minBiteScoreAlert: threshold),
+                );
                 Navigator.pop(context);
               },
               child: const Text('Save'),

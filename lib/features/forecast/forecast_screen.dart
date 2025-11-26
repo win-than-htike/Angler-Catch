@@ -121,10 +121,7 @@ class _ForecastScreenState extends State<ForecastScreen> {
                   children: [
                     const Text(
                       'Today\'s Bite Rating',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.white70,
-                      ),
+                      style: TextStyle(fontSize: 14, color: Colors.white70),
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -239,10 +236,7 @@ class _ForecastScreenState extends State<ForecastScreen> {
                   const SizedBox(width: 4),
                   const Text(
                     'Solunar Peak',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textMuted,
-                    ),
+                    style: TextStyle(fontSize: 12, color: AppColors.textMuted),
                   ),
                 ],
               ),
@@ -317,8 +311,7 @@ class _ForecastScreenState extends State<ForecastScreen> {
                         ),
                       ),
                     ],
-                    showingTooltipIndicators:
-                        hour.isSolunarPeak ? [0] : [],
+                    showingTooltipIndicators: hour.isSolunarPeak ? [0] : [],
                   );
                 }).toList(),
               ),
@@ -398,10 +391,7 @@ class _ForecastScreenState extends State<ForecastScreen> {
         ),
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 12,
-            color: AppColors.textMuted,
-          ),
+          style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
         ),
       ],
     );
@@ -409,37 +399,34 @@ class _ForecastScreenState extends State<ForecastScreen> {
 
   SliverList _buildWeeklyForecast(AppState appState) {
     return SliverList(
-      delegate: SliverChildBuilderDelegate(
-        (context, index) {
-          if (index == 0) {
-            return const Padding(
-              padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
-              child: Text(
-                '7-Day Forecast',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
+      delegate: SliverChildBuilderDelegate((context, index) {
+        if (index == 0) {
+          return const Padding(
+            padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
+            child: Text(
+              '7-Day Forecast',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
               ),
-            );
-          }
-
-          final forecastIndex = index - 1;
-          if (forecastIndex >= appState.biteForecast.length) {
-            return null;
-          }
-
-          final forecast = appState.biteForecast[forecastIndex];
-          return ForecastCard(
-            forecast: forecast,
-            onTap: () {
-              setState(() => _selectedDayIndex = forecastIndex);
-            },
+            ),
           );
-        },
-        childCount: appState.biteForecast.length + 1,
-      ),
+        }
+
+        final forecastIndex = index - 1;
+        if (forecastIndex >= appState.biteForecast.length) {
+          return null;
+        }
+
+        final forecast = appState.biteForecast[forecastIndex];
+        return ForecastCard(
+          forecast: forecast,
+          onTap: () {
+            setState(() => _selectedDayIndex = forecastIndex);
+          },
+        );
+      }, childCount: appState.biteForecast.length + 1),
     );
   }
 

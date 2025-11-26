@@ -228,18 +228,19 @@ class ForecastService {
     final locationGroups = <String, List<CatchRecord>>{};
 
     for (final catchRecord in catches) {
-      final key = '${(catchRecord.location.latitude * 100).round()},'
+      final key =
+          '${(catchRecord.location.latitude * 100).round()},'
           '${(catchRecord.location.longitude * 100).round()}';
       locationGroups.putIfAbsent(key, () => []).add(catchRecord);
     }
 
     return locationGroups.entries.map((entry) {
       final groupCatches = entry.value;
-      final avgLat = groupCatches
-              .map((c) => c.location.latitude)
-              .reduce((a, b) => a + b) /
+      final avgLat =
+          groupCatches.map((c) => c.location.latitude).reduce((a, b) => a + b) /
           groupCatches.length;
-      final avgLng = groupCatches
+      final avgLng =
+          groupCatches
               .map((c) => c.location.longitude)
               .reduce((a, b) => a + b) /
           groupCatches.length;

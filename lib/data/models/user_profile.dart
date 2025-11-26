@@ -21,38 +21,37 @@ class UserProfile {
   });
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'email': email,
-        'avatar_url': avatarUrl,
-        'preferred_species': preferredSpecies,
-        'preferred_baits': preferredBaits,
-        'settings': settings.toJson(),
-        'stats': stats.toJson(),
-      };
+    'id': id,
+    'name': name,
+    'email': email,
+    'avatar_url': avatarUrl,
+    'preferred_species': preferredSpecies,
+    'preferred_baits': preferredBaits,
+    'settings': settings.toJson(),
+    'stats': stats.toJson(),
+  };
 
   factory UserProfile.fromJson(Map<String, dynamic> json) => UserProfile(
-        id: json['id'] as String,
-        name: json['name'] as String?,
-        email: json['email'] as String?,
-        avatarUrl: json['avatar_url'] as String?,
-        preferredSpecies:
-            (json['preferred_species'] as List?)?.cast<String>() ?? [],
-        preferredBaits:
-            (json['preferred_baits'] as List?)?.cast<String>() ?? [],
-        settings: json['settings'] != null
-            ? UserSettings.fromJson(json['settings'] as Map<String, dynamic>)
-            : const UserSettings(),
-        stats: json['stats'] != null
-            ? UserStats.fromJson(json['stats'] as Map<String, dynamic>)
-            : const UserStats(),
-      );
+    id: json['id'] as String,
+    name: json['name'] as String?,
+    email: json['email'] as String?,
+    avatarUrl: json['avatar_url'] as String?,
+    preferredSpecies:
+        (json['preferred_species'] as List?)?.cast<String>() ?? [],
+    preferredBaits: (json['preferred_baits'] as List?)?.cast<String>() ?? [],
+    settings: json['settings'] != null
+        ? UserSettings.fromJson(json['settings'] as Map<String, dynamic>)
+        : const UserSettings(),
+    stats: json['stats'] != null
+        ? UserStats.fromJson(json['stats'] as Map<String, dynamic>)
+        : const UserStats(),
+  );
 
   factory UserProfile.empty(String id) => UserProfile(
-        id: id,
-        settings: const UserSettings(),
-        stats: const UserStats(),
-      );
+    id: id,
+    settings: const UserSettings(),
+    stats: const UserStats(),
+  );
 
   UserProfile copyWith({
     String? id,
@@ -63,17 +62,16 @@ class UserProfile {
     List<String>? preferredBaits,
     UserSettings? settings,
     UserStats? stats,
-  }) =>
-      UserProfile(
-        id: id ?? this.id,
-        name: name ?? this.name,
-        email: email ?? this.email,
-        avatarUrl: avatarUrl ?? this.avatarUrl,
-        preferredSpecies: preferredSpecies ?? this.preferredSpecies,
-        preferredBaits: preferredBaits ?? this.preferredBaits,
-        settings: settings ?? this.settings,
-        stats: stats ?? this.stats,
-      );
+  }) => UserProfile(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    email: email ?? this.email,
+    avatarUrl: avatarUrl ?? this.avatarUrl,
+    preferredSpecies: preferredSpecies ?? this.preferredSpecies,
+    preferredBaits: preferredBaits ?? this.preferredBaits,
+    settings: settings ?? this.settings,
+    stats: stats ?? this.stats,
+  );
 }
 
 /// User app settings.
@@ -93,20 +91,20 @@ class UserSettings {
   });
 
   Map<String, dynamic> toJson() => {
-        'notifications_enabled': notificationsEnabled,
-        'location_enabled': locationEnabled,
-        'unit_system': unitSystem,
-        'forecast_alert_hours': forecastAlertHours,
-        'min_bite_score_alert': minBiteScoreAlert,
-      };
+    'notifications_enabled': notificationsEnabled,
+    'location_enabled': locationEnabled,
+    'unit_system': unitSystem,
+    'forecast_alert_hours': forecastAlertHours,
+    'min_bite_score_alert': minBiteScoreAlert,
+  };
 
   factory UserSettings.fromJson(Map<String, dynamic> json) => UserSettings(
-        notificationsEnabled: json['notifications_enabled'] as bool? ?? true,
-        locationEnabled: json['location_enabled'] as bool? ?? true,
-        unitSystem: json['unit_system'] as String? ?? 'imperial',
-        forecastAlertHours: json['forecast_alert_hours'] as int? ?? 2,
-        minBiteScoreAlert: json['min_bite_score_alert'] as double? ?? 70,
-      );
+    notificationsEnabled: json['notifications_enabled'] as bool? ?? true,
+    locationEnabled: json['location_enabled'] as bool? ?? true,
+    unitSystem: json['unit_system'] as String? ?? 'imperial',
+    forecastAlertHours: json['forecast_alert_hours'] as int? ?? 2,
+    minBiteScoreAlert: json['min_bite_score_alert'] as double? ?? 70,
+  );
 
   UserSettings copyWith({
     bool? notificationsEnabled,
@@ -114,14 +112,13 @@ class UserSettings {
     String? unitSystem,
     int? forecastAlertHours,
     double? minBiteScoreAlert,
-  }) =>
-      UserSettings(
-        notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
-        locationEnabled: locationEnabled ?? this.locationEnabled,
-        unitSystem: unitSystem ?? this.unitSystem,
-        forecastAlertHours: forecastAlertHours ?? this.forecastAlertHours,
-        minBiteScoreAlert: minBiteScoreAlert ?? this.minBiteScoreAlert,
-      );
+  }) => UserSettings(
+    notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
+    locationEnabled: locationEnabled ?? this.locationEnabled,
+    unitSystem: unitSystem ?? this.unitSystem,
+    forecastAlertHours: forecastAlertHours ?? this.forecastAlertHours,
+    minBiteScoreAlert: minBiteScoreAlert ?? this.minBiteScoreAlert,
+  );
 }
 
 /// User fishing statistics.
@@ -141,18 +138,18 @@ class UserStats {
   });
 
   Map<String, dynamic> toJson() => {
-        'total_catches': totalCatches,
-        'biggest_catch': biggestCatch,
-        'most_caught_species': mostCaughtSpecies,
-        'most_used_bait': mostUsedBait,
-        'fishing_days': fishingDays,
-      };
+    'total_catches': totalCatches,
+    'biggest_catch': biggestCatch,
+    'most_caught_species': mostCaughtSpecies,
+    'most_used_bait': mostUsedBait,
+    'fishing_days': fishingDays,
+  };
 
   factory UserStats.fromJson(Map<String, dynamic> json) => UserStats(
-        totalCatches: json['total_catches'] as int? ?? 0,
-        biggestCatch: json['biggest_catch'] as double?,
-        mostCaughtSpecies: json['most_caught_species'] as String?,
-        mostUsedBait: json['most_used_bait'] as String?,
-        fishingDays: json['fishing_days'] as int? ?? 0,
-      );
+    totalCatches: json['total_catches'] as int? ?? 0,
+    biggestCatch: json['biggest_catch'] as double?,
+    mostCaughtSpecies: json['most_caught_species'] as String?,
+    mostUsedBait: json['most_used_bait'] as String?,
+    fishingDays: json['fishing_days'] as int? ?? 0,
+  );
 }

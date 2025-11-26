@@ -99,13 +99,10 @@ class WeatherForecast {
 
   factory WeatherForecast.fromOpenWeather(Map<String, dynamic> json) {
     final temp = json['temp'] as Map<String, dynamic>;
-    final weather =
-        (json['weather'] as List).first as Map<String, dynamic>;
+    final weather = (json['weather'] as List).first as Map<String, dynamic>;
 
     return WeatherForecast(
-      date: DateTime.fromMillisecondsSinceEpoch(
-        (json['dt'] as int) * 1000,
-      ),
+      date: DateTime.fromMillisecondsSinceEpoch((json['dt'] as int) * 1000),
       tempHigh: (temp['max'] as num).toDouble(),
       tempLow: (temp['min'] as num).toDouble(),
       condition: weather['main'] as String,
@@ -114,14 +111,10 @@ class WeatherForecast {
       humidity: json['humidity'] as int,
       pressure: (json['pressure'] as num).toDouble(),
       sunrise: json['sunrise'] != null
-          ? DateTime.fromMillisecondsSinceEpoch(
-              (json['sunrise'] as int) * 1000,
-            )
+          ? DateTime.fromMillisecondsSinceEpoch((json['sunrise'] as int) * 1000)
           : null,
       sunset: json['sunset'] != null
-          ? DateTime.fromMillisecondsSinceEpoch(
-              (json['sunset'] as int) * 1000,
-            )
+          ? DateTime.fromMillisecondsSinceEpoch((json['sunset'] as int) * 1000)
           : null,
       moonPhase: (json['moon_phase'] as num).toDouble(),
       moonPhaseName: _getMoonPhaseName((json['moon_phase'] as num).toDouble()),

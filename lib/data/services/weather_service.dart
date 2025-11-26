@@ -49,8 +49,10 @@ class WeatherService {
       final daily = data['daily'] as List;
 
       return daily
-          .map((day) =>
-              WeatherForecast.fromOpenWeather(day as Map<String, dynamic>))
+          .map(
+            (day) =>
+                WeatherForecast.fromOpenWeather(day as Map<String, dynamic>),
+          )
           .toList();
     }
 
@@ -82,15 +84,15 @@ class WeatherService {
   }
 
   List<String> _getMoonPhaseNames() => [
-        'New Moon',
-        'Waxing Crescent',
-        'First Quarter',
-        'Waxing Gibbous',
-        'Full Moon',
-        'Waning Gibbous',
-        'Last Quarter',
-        'Waning Crescent',
-      ];
+    'New Moon',
+    'Waxing Crescent',
+    'First Quarter',
+    'Waxing Gibbous',
+    'Full Moon',
+    'Waning Gibbous',
+    'Last Quarter',
+    'Waning Crescent',
+  ];
 
   void dispose() {
     _client.close();
