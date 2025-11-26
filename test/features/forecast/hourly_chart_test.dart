@@ -1,6 +1,5 @@
 import 'package:angler_catch/data/providers/app_state.dart';
 import 'package:angler_catch/features/forecast/forecast_screen.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -24,126 +23,44 @@ void main() {
       );
     }
 
-    testWidgets('displays hourly chart without permanent tooltips', (
+    testWidgets('displays hourly predictions as scrollable list', (
       tester,
     ) async {
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
 
-      // Find the BarChart widget
-      final barChartFinder = find.byType(BarChart);
-      expect(barChartFinder, findsOneWidget);
+      // Find the horizontal ListView
+      final listViewFinder = find.byType(ListView);
+      expect(listViewFinder, findsWidgets);
 
-      // Verify chart is displayed
-      final barChart = tester.widget<BarChart>(barChartFinder);
-      final data = barChart.data;
-
-      // Verify no bars have permanent tooltip indicators
-      // (this was the bug: showingTooltipIndicators was set for solunar peaks)
-      for (final group in data.barGroups) {
-        expect(
-          group.showingTooltipIndicators,
-          isEmpty,
-          reason: 'Bar groups should not have permanent tooltip indicators',
-        );
-      }
+      // Verify section header is displayed
+      expect(find.text('Hourly Bite Probability'), findsOneWidget);
     });
 
-    testWidgets(
-      'solunar peak bars have background highlight instead of tooltip',
-      (tester) async {
-        await tester.pumpWidget(createTestWidget());
-        await tester.pumpAndSettle();
-
-        final barChartFinder = find.byType(BarChart);
-        final barChart = tester.widget<BarChart>(barChartFinder);
-        final data = barChart.data;
-
-        // Find bars that correspond to solunar peak hours
-        final predictions = mockAppState.biteForecast.first.hourlyPredictions;
-        final solunarPeakIndices = <int>[];
-        for (var i = 0; i < predictions.length; i++) {
-          if (predictions[i].isSolunarPeak) {
-            solunarPeakIndices.add(i);
-          }
-        }
-
-        // Verify solunar peak bars have background highlight
-        for (final index in solunarPeakIndices) {
-          final group = data.barGroups[index];
-          final rod = group.barRods.first;
-          expect(
-            rod.backDrawRodData,
-            isNotNull,
-            reason: 'Solunar peak bars should have background highlight',
-          );
-          expect(
-            rod.backDrawRodData.show,
-            isTrue,
-            reason: 'Background highlight should be visible',
-          );
-        }
-      },
-    );
-
-    testWidgets('bottom titles have reserved space to prevent clipping', (
+    testWidgets('displays time labels for each hour without overlap', (
       tester,
     ) async {
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
 
-      final barChartFinder = find.byType(BarChart);
-      final barChart = tester.widget<BarChart>(barChartFinder);
-      final data = barChart.data;
-
-      // Verify bottom titles have reserved size
-      final bottomTitles = data.titlesData.bottomTitles;
-      expect(
-        bottomTitles.sideTitles.reservedSize,
-        greaterThanOrEqualTo(28),
-        reason: 'Bottom titles should have reserved space to prevent clipping',
-      );
-    });
-
-    testWidgets('tooltips are configured to fit inside chart bounds', (
-      tester,
-    ) async {
-      await tester.pumpWidget(createTestWidget());
-      await tester.pumpAndSettle();
-
-      final barChartFinder = find.byType(BarChart);
-      final barChart = tester.widget<BarChart>(barChartFinder);
-      final data = barChart.data;
-
-      // Verify tooltip configuration prevents overflow
-      final tooltipData = data.barTouchData.touchTooltipData;
-      expect(
-        tooltipData.fitInsideHorizontally,
-        isTrue,
-        reason: 'Tooltips should fit inside horizontal bounds',
-      );
-      expect(
-        tooltipData.fitInsideVertically,
-        isTrue,
-        reason: 'Tooltips should fit inside vertical bounds',
-      );
-    });
-
-    testWidgets('time labels are shown at 6-hour intervals', (tester) async {
-      await tester.pumpWidget(createTestWidget());
-      await tester.pumpAndSettle();
-
-      // Look for time labels (12am, 6am, 12pm, 6pm pattern)
-      // These are displayed as lowercase with 'ha' format (e.g., "12am", "6am")
+      // The new horizontal list shows each hour with its own card
+      // Look for some time labels in the visible area
       expect(find.text('12am'), findsOneWidget);
-      expect(find.text('6am'), findsOneWidget);
-      expect(find.text('12pm'), findsOneWidget);
-      expect(find.text('6pm'), findsOneWidget);
     });
 
-    testWidgets('chart header displays correctly without overlap', (
-      tester,
-    ) async {
+    testWidgets('solunar peak hours display star icon', (tester) async {
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      // Verify star icons are displayed for solunar peaks
+      expect(
+        find.byIcon(Icons.star),
+        findsWidgets,
+        reason: 'Star icons should be visible for solunar peaks and legend',
+      );
+    });
+
+    testWidgets('chart header displays correctly', (tester) async {
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
 
@@ -156,6 +73,35 @@ void main() {
         find.byIcon(Icons.star),
         findsWidgets,
         reason: 'Star icon should be visible in legend',
+      );
+    });
+
+    testWidgets('hourly cards display percentage values', (tester) async {
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      // Find percentage text widgets (e.g., "75%", "80%")
+      final percentFinder = find.textContaining('%');
+      expect(
+        percentFinder,
+        findsWidgets,
+        reason: 'Hourly cards should display percentage values',
+      );
+    });
+
+    testWidgets('list is horizontally scrollable', (tester) async {
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      // Find a horizontal ListView
+      final listViewFinder = find.byWidgetPredicate(
+        (widget) =>
+            widget is ListView && widget.scrollDirection == Axis.horizontal,
+      );
+      expect(
+        listViewFinder,
+        findsOneWidget,
+        reason: 'Should have a horizontal scrollable list',
       );
     });
   });

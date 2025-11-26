@@ -1,9 +1,9 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/forecast_card.dart';
+import '../../data/models/forecast.dart';
 import '../../data/providers/app_state.dart';
 
 class ForecastScreen extends StatefulWidget {
@@ -209,17 +209,12 @@ class _ForecastScreenState extends State<ForecastScreen> {
     final selectedForecast = appState.biteForecast[_selectedDayIndex];
     final predictions = selectedForecast.hourlyPredictions;
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
@@ -242,105 +237,24 @@ class _ForecastScreenState extends State<ForecastScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          SizedBox(
-            height: 200,
-            child: BarChart(
-              BarChartData(
-                alignment: BarChartAlignment.spaceAround,
-                maxY: 100,
-                barTouchData: BarTouchData(
-                  enabled: true,
-                  touchTooltipData: BarTouchTooltipData(
-                    fitInsideHorizontally: true,
-                    fitInsideVertically: true,
-                    getTooltipColor: (group) => AppColors.surfaceElevated,
-                    getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                      final hour = predictions[group.x.toInt()];
-                      final peakLabel = hour.isSolunarPeak ? ' ⭐' : '';
-                      return BarTooltipItem(
-                        '${DateFormat('h a').format(hour.hour)}\n'
-                        '${hour.biteScore.round()}%$peakLabel',
-                        const TextStyle(
-                          color: AppColors.textPrimary,
-                          fontSize: 12,
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                titlesData: FlTitlesData(
-                  show: true,
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 28,
-                      getTitlesWidget: (value, meta) {
-                        final index = value.toInt();
-                        if (index < 0 || index >= predictions.length) {
-                          return const SizedBox.shrink();
-                        }
-                        // Show labels at 6-hour intervals: 12am, 6am, 12pm, 6pm
-                        final hour = predictions[index].hour.hour;
-                        if (hour % 6 != 0) {
-                          return const SizedBox.shrink();
-                        }
-                        return Padding(
-                          padding: const EdgeInsets.only(top: 8),
-                          child: Text(
-                            DateFormat(
-                              'ha',
-                            ).format(predictions[index].hour).toLowerCase(),
-                            style: const TextStyle(
-                              color: AppColors.textMuted,
-                              fontSize: 10,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  leftTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                ),
-                gridData: const FlGridData(show: false),
-                borderData: FlBorderData(show: false),
-                barGroups: predictions.asMap().entries.map((entry) {
-                  final hour = entry.value;
-                  final isSolunarPeak = hour.isSolunarPeak;
-                  return BarChartGroupData(
-                    x: entry.key,
-                    barRods: [
-                      BarChartRodData(
-                        toY: hour.biteScore,
-                        color: _getScoreColor(hour.biteScore),
-                        width: 8,
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(4),
-                        ),
-                        backDrawRodData: isSolunarPeak
-                            ? BackgroundBarChartRodData(
-                                show: true,
-                                toY: 100,
-                                color: AppColors.accentGold.withAlpha(40),
-                              )
-                            : null,
-                      ),
-                    ],
-                  );
-                }).toList(),
-              ),
-            ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 140,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            itemCount: predictions.length,
+            itemBuilder: (context, index) {
+              final hour = predictions[index];
+              return _HourlyPredictionCard(
+                hour: hour,
+                scoreColor: _getScoreColor(hour.biteScore),
+              );
+            },
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -457,5 +371,75 @@ class _ForecastScreenState extends State<ForecastScreen> {
     if (score >= 60) return AppColors.primaryGreen;
     if (score >= 40) return AppColors.accentOrange;
     return AppColors.error;
+  }
+}
+
+class _HourlyPredictionCard extends StatelessWidget {
+  const _HourlyPredictionCard({required this.hour, required this.scoreColor});
+
+  final HourlyPrediction hour;
+  final Color scoreColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 56,
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+      decoration: BoxDecoration(
+        color: hour.isSolunarPeak
+            ? AppColors.accentGold.withAlpha(30)
+            : AppColors.surfaceCard,
+        borderRadius: BorderRadius.circular(12),
+        border: hour.isSolunarPeak
+            ? Border.all(color: AppColors.accentGold.withAlpha(100), width: 1)
+            : null,
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            DateFormat('ha').format(hour.hour).toLowerCase(),
+            style: const TextStyle(
+              color: AppColors.textMuted,
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          if (hour.isSolunarPeak)
+            const Icon(Icons.star, size: 14, color: AppColors.accentGold)
+          else
+            const SizedBox(height: 14),
+          _buildScoreIndicator(),
+          Text(
+            '${hour.biteScore.round()}%',
+            style: TextStyle(
+              color: scoreColor,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildScoreIndicator() {
+    return Container(
+      width: 32,
+      height: 32,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: scoreColor.withAlpha(30),
+        border: Border.all(color: scoreColor, width: 2),
+      ),
+      child: Center(
+        child: Container(
+          width: 8 + (hour.biteScore / 100) * 12,
+          height: 8 + (hour.biteScore / 100) * 12,
+          decoration: BoxDecoration(shape: BoxShape.circle, color: scoreColor),
+        ),
+      ),
+    );
   }
 }
