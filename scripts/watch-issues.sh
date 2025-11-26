@@ -472,16 +472,53 @@ I reviewed the feedback but couldn't determine what changes to make. Please prov
         return
     fi
 
-    # Push
+    # Push with test failure handling
     echo -e "   ${BLUE}📤 Pushing fixes...${NC}"
-    if ! git push origin "$pr_branch" 2>&1; then
-        echo -e "   ${YELLOW}⚠️ Push failed, retrying...${NC}"
-        sleep 2
-        git push origin "$pr_branch" || {
-            echo -e "   ${RED}❌ Push failed${NC}"
-            git checkout "$default_branch"
-            return
-        }
+    local push_attempts=0
+    local max_push_attempts=3
+    local push_success=false
+
+    while [ $push_attempts -lt $max_push_attempts ] && [ "$push_success" = false ]; do
+        push_output=$(git push origin "$pr_branch" 2>&1)
+        push_exit_code=$?
+
+        if [ $push_exit_code -eq 0 ]; then
+            push_success=true
+            echo -e "   ${GREEN}✅ Push successful${NC}"
+        else
+            push_attempts=$((push_attempts + 1))
+            echo -e "   ${YELLOW}⚠️ Push failed (attempt $push_attempts/$max_push_attempts)${NC}"
+
+            # Check if it's a test failure
+            if echo "$push_output" | grep -qi "flutter-test\|Tests failed"; then
+                echo -e "   ${BLUE}🧪 Tests failed, asking Claude to fix...${NC}"
+                test_output=$(flutter test 2>&1 || true)
+
+                claude -p "The tests are failing. Here's the output:
+
+${test_output}
+
+Fix the failing tests now." --dangerously-skip-permissions --verbose
+
+                git add -A
+                git commit --amend --no-edit 2>/dev/null || git commit -m "fix: resolve test failures" 2>/dev/null || true
+            else
+                sleep 2
+            fi
+        fi
+    done
+
+    if [ "$push_success" = false ]; then
+        echo -e "   ${RED}❌ Push failed after $max_push_attempts attempts${NC}"
+        gh pr comment "$pr_number" --repo "$REPO" --body "## ⚠️ Push Failed
+
+Changes made but push failed. Please review manually.
+
+---
+*🤖 Claude Code Bot*"
+        gh pr edit "$pr_number" --repo "$REPO" --remove-label "needs-changes"
+        git checkout "$default_branch"
+        return
     fi
 
     # Comment on PR
